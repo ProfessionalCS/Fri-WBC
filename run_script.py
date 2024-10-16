@@ -48,7 +48,7 @@ modelInitialize = PPO(
 
 # making the model learn (train)  (complete)
 modelInitialize.learn(
-    total_timesteps= 5000,  # Number of timesteps for model training
+    total_timesteps= 50000,  # Number of timesteps for model training
     log_interval= 1,        # Interval for training progress,
 )
 
@@ -57,7 +57,7 @@ modelInitialize.save("model_saved_must_work")    # is this needed?
 
 # saving model in pth format as was mentioned in instructions
 torch.save(modelInitialize.policy.state_dict(), "model_saved_must_work.pth")   # or this is better?
-
+breakpoint()
 # loading the model
 model = PPO.load("model_saved_must_work.zip")
 
