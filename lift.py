@@ -428,7 +428,7 @@ class Lift(SingleArmEnv):
         table_height = self.model.mujoco_arena.table_offset[2]
 
         # cube is higher than the table top above a margin
-        print("check_success called")
+        # print("check_success called")
         if( cube_height > table_height + 0.04):
             print("Cube lifted")
         return cube_height > table_height + 0.04

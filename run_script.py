@@ -1,4 +1,4 @@
-
+import cv2
 import numpy as np
 import robosuite as suite
 
@@ -10,7 +10,7 @@ from robosuite.wrappers import GymWrapper
 import torch
 from stable_baselines3.common.vec_env import VecNormalize
 
-from robosuite.environments.base import REGISTERED_ENVS  # loads wrong environment!!!
+# from robosuite.environments.base import REGISTERED_ENVS  # loads wrong environment!!!
 
 
 print("All imports work!")
@@ -42,13 +42,14 @@ modelInitialize = PPO(
     learning_rate= 0.0003,    # Learning rate for the model (should it be changed?)
     n_steps= 3000,            # Number of steps for each update
     batch_size= 500,           # Batch size for optimization
-    verbose= 1                # Verbose idk what that is
+    verbose=1,                # Verbose idk what that is
+    tensorboard_log='/home/anastasiia/tb.log/'
 )
 
 # making the model learn (train)  (complete)
 modelInitialize.learn(
-    total_timesteps= 10000,  # Number of timesteps for model training
-    log_interval= 10         # Interval for training progress
+    total_timesteps= 5000,  # Number of timesteps for model training
+    log_interval= 1,        # Interval for training progress,
 )
 
 # saving the model in general
@@ -63,7 +64,46 @@ model = PPO.load("model_saved_must_work.zip")
 # if I want to keep training I can load it from where I left off (this will oad model from zip)
 model = PPO.load("model_saved_must_work.zip", env=my_vec_env)
 
+######################################################################
+
+# Attempting to Load the Environmnet (Successfuly Completed)
+
+obs = env.reset()
+print("Initial observation:", obs)
+print("Expected observation space:", my_vec_env.observation_space)
+
+for i in range(1000):
+    # Extract the 'robot0_proprio-state' as the base observation
+    observation_array = obs['robot0_proprio-state']
+
+    # Check if padding is needed to match the expected observation space (42,)
+    if observation_array.shape[0] < 42:
+        # Pad with zeros or concatenate additional parts from the observation dict if necessary
+        observation_array = np.pad(observation_array, (0, 42 - observation_array.shape[0]), 'constant')
+        # np. pad used from the outside source recommendation
+
+    # np.predict used to predict the observation array value 
+    action, _states = model.predict(observation_array)
+    print(f"Action taken: {action}")
+
+    obs, reward, done, info = env.step(action)
+    print(f"Reward: {reward}, Done: {done}, Info: {info}")
+    env.render()
+
+    if done:
+        obs = env.reset()
+        
+####################################################################
+# for i in range(1000):  # Run for 1000 steps
+#     action, _states = model.predict(obs)  
+#     obs, reward, done, info = env.step(action)     
+#     env.render() 
+    
+#     if done:  # If the episode is done, reset the environment
+#         obs = env.reset()
+
 # reset the environment
+
 env.reset()
 
 
