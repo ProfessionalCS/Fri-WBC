@@ -29,18 +29,18 @@ env = suite.make( # robosuite env here
     reward_shaping=True
 )
 
-# wrapping the environment fccess Token on GitHuor being compatible with Gym (complete)
+# wrapping the environment for being compatible with Gym (complete)
 my_wrapped_env = GymWrapper(env)
 
 # creating the vector env for stable baselines (I think its needed)
 my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
 
-# normalizing (scaling the input from 0 to 1) ==> IS IT LIKE Discount?   (complete)
+# normalizing (scaling the input from 0 to 1) ==> IS IT LIKE Discout?   (complete)
 my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
 
 
 # if I want to keep training I can load it from where I left off (this will load model from zip)
-model = PPO.load("model_saved_must_work.zip", env=my_vec_env)  # pulls up the ast model saved
+model = PPO.load("model_saved_must_work.zip", env=my_vec_env)
 
 ######################################################################
 
@@ -61,7 +61,7 @@ for i in range(1000):
         # np. pad used from the outside source recommendation
 
     # np.predict used to predict the observation array value 
-    action, states = model.predict(observation_array)
+    action, _states = model.predict(observation_array)
     print(f"Action taken: {action}")
 
     obs, reward, done, info = env.step(action)

@@ -40,7 +40,7 @@ my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
 my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
 
 #File Pathfinding
-file_path = "model_saved_must_work.zip" # just adds on it already contains zip when saving
+file_path = "model_saved_must_work.zip"
 if os.path.exists(file_path):
     print("Loading model")
     model = PPO.load("model_saved_must_work")
@@ -55,13 +55,13 @@ else :
         n_steps= 3000,            # Number of steps for each update
         batch_size= 500,           # Batch size for optimization
         verbose=1,                # Verbose idk what that is
-        tensorboard_log='/home/fri/tb.log' # where it being saved? 
+        tensorboard_log='/home/fri/tb.log'
     )
 
 # making the model learn (train)  (complete)
 model.learn(
-    total_timesteps= 2500000,  # TO DO:   ==> determine when model is most performing based on the reward  
-    log_interval= 1,        # Interval for training progress, number of timesteps for model training 
+    total_timesteps= 2500000,  # Number of timesteps for model training
+    log_interval= 1,        # Interval for training progress,
 )
 
 # saving the model in general
