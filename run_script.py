@@ -50,10 +50,11 @@ modelInitialize = PPO(
 modelInitialize.learn(
     total_timesteps= 50000,  # Number of timesteps for model training
     log_interval= 1,        # Interval for training progress,
+
 )
 
 # saving the model in general
-modelInitialize.save("model_saved_must_work")    # is this needed?
+modelInitialize.save("model_saved_must_work")    # is this needed?   // how to add joints? and make it model.learn.joints(actions) not states  its actions
 
 # saving model in pth format as was mentioned in instructions
 torch.save(modelInitialize.policy.state_dict(), "model_saved_must_work.pth")   # or this is better?
@@ -72,6 +73,7 @@ obs = env.reset()
 print("Initial observation:", obs)
 print("Expected observation space:", my_vec_env.observation_space)
 
+# Visualize the ENV   Can make a video saving each timr
 for i in range(1000):
     # Extract the 'robot0_proprio-state' as the base observation
     observation_array = obs['robot0_proprio-state']
@@ -92,7 +94,17 @@ for i in range(1000):
 
     if done:
         obs = env.reset()
-        
+
+# #creating a trjectory ==> desired joint angles and end effector position
+# trajectoryMovementHabd = {
+#     [10, 10, 10, 10]
+#     [20, 20, 20, 20]
+#     [30, 30, 30, 30]
+# }
+
+# gripper ==
+#matching trajectiry of the hand matching position of te joints
+
 ####################################################################
 # for i in range(1000):  # Run for 1000 steps
 #     action, _states = model.predict(obs)  
