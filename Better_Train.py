@@ -12,59 +12,37 @@ from stable_baselines3.common.vec_env import VecNormalize
 # File Finding 
 from pathlib import Path  
 import os
-# import gym??
+
 from PointEnv import PointEnv
+
+# Register Enviorment
+#import Gymnasium
+from robosuite.environments.base import register_env
+from my_environments import GoToPointTask
+register_env(GoToPointTask)
 
 print("All imports work!")
 print ("Stable_baselines3 Installed Successfully")
 print ("Gym Installed Successfully")
 
-def create_point_env():
-    target_ee_position = np.array([0.3,0,0])
-
-    env = PointEnv(
-        robots="Panda",  
-        has_renderer=True,  # Rn I unabled visual sim if its needed
-        has_offscreen_renderer=False,
-        use_camera_obs=False,
-        reward_shaping=True  #  dense reward
-    )
-    env.set_target_position(target_ee_position)
-    # Vectorize and Normalize Environment
-    my_wrapped_env = GymWrapper(env)
-    my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
-    my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
-    return my_vec_env
-
-def create_lift_env():
-    env = suite.make( # robosuite env here
-        env_name="Lift", # try with other tasks like "Stack" and "Door"
-        robots="Panda",  # try with other robots like "Sawyer" and "Jaco"
-        has_renderer=False,
-        has_offscreen_renderer=False,
-        use_camera_obs=False,
-        reward_shaping = True # dense reward
-    )
-
-    # wrapping the environment for being compatible with Gym (complete)
-    my_wrapped_env = GymWrapper(env)
-
-    # creating the vector env for stable baselines (I think its needed)
-    my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
-
-    # normalizing (scaling the input from 0 to 1) ==> IS IT LIKE Discout?   (complete)
-    my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
 
 
 
 # create environment instance
 if __name__ == "__main__":
-    env = create_point_env()
+    env = suite.make(
+    env_name="GoToPointTask", # try with other tasks like "Stack" and "Door"
+    robots="Panda",  # try with other robots like "Sawyer" and "Jaco"
+    has_renderer=True,
+    has_offscreen_renderer=False,
+    use_camera_obs=False,
+)
+
 
 
     model_name = "point_model"
     file_path = model_name + ".zip"
-    if os.path.exists(file_path):
+    if os.path.exists(file_path) & False:
         print("Loading model")
         model = PPO.load(model_name)
         model.env = env

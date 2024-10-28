@@ -5,7 +5,7 @@ import robosuite as suite
 
 from robosuite.environments.base import register_env
 
-from my_enviorments import GoToPointTask
+from my_environments import GoToPointTask
 
 
 register_env(GoToPointTask)

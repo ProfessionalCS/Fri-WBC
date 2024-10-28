@@ -232,10 +232,14 @@ class Lift(SingleArmEnv):
             action (np array): [NOT USED]
 
         Returns:
-            float: reward value
-        """
-        reward = 0.0
-
+            float: reward valuedef reward(self, action):
+        # Getting the current position of the gripper
+        gripper_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
+        # Calculate distance to the target
+        distance = np.linalg.norm(gripper_pos - self.current_target_position)
+        # Reward based on how close gripper to the target
+        reward = 1 - np.tanh(10.0 * distance)
+        return reward 
         # sparse completion reward
         if self._check_success():
             reward = 2.25

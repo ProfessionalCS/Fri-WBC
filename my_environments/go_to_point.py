@@ -177,7 +177,7 @@ class GoToPointTask(SingleArmEnv):
         camera_segmentations=None,  # {None, instance, class, element}
         renderer="mujoco",
         renderer_config=None,
-        start_time = time.time()
+        #start_time = time.time()
     ):
         # settings for table top
         # self.table_full_size = table_full_size
