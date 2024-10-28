@@ -1,3 +1,4 @@
+print("This was called")
 import cv2
 import numpy as np
 import robosuite as suite
