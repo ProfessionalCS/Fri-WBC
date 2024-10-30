@@ -88,14 +88,14 @@ if __name__ == "__main__":
     
     register_env(GoToPointTask)
     env_options = {}
-    env_options["control_freq"] = 500
+    env_options["control_freq"] = 20
     env_options["render_camera"] = None
     env_options["use_object_obs"] = False
     env_options["horizon"] = 1000
     
     
     seed = 3
-    num_cpu = 8
+    num_cpu = 20
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
     model_name = "point_model"
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     # making the model learn (train)  (complete)
     model.learn(
-        total_timesteps= 2500000,  # Number of timesteps for model training
+        total_timesteps= 10000000,  # Number of timesteps for model training
         log_interval= 1,        # Interval for training progress,
     )
     model.save(model_name)

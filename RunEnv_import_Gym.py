@@ -16,7 +16,7 @@ env = suite.make( # robosuite env here
 # Start the environment
 state = env.reset()
 
-for i in range(1000):
+for i in range(1000):| 2.64e-06
      action = np.random.randn(env.robots[0].dof) # change to learned policy from st baselines to rl
      obs, reward, done, info = env.step(action)  
      env.render()  

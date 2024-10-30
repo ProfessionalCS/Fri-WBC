@@ -252,11 +252,15 @@ class GoToPointTask(SingleArmEnv):
         if self._check_success():
             reward = 2.25
              # reaching reward
+        
         waypoint = np.array([0.5, 0.5, 0.5]) # the goal position
         gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
         dist = np.linalg.norm(gripper_site_pos - waypoint)
         reaching_reward = 1 - np.tanh(10.0 * dist)
         reward += reaching_reward
+        return reward
+
+        
 
             
         # basic dence reward
@@ -282,7 +286,7 @@ class GoToPointTask(SingleArmEnv):
         #     reward *= self.reward_scale / 2.25
         
 
-        return reward
+        #return reward
 
     def _load_model(self):
         """
