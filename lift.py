@@ -266,9 +266,9 @@ class Lift(SingleArmEnv):
         return reward
 
     def _load_model(self):
-        """
+       
         Loads an xml model, puts it in self.model
-        """
+        
         super()._load_model()
 
         # Adjust base pose accordingly
