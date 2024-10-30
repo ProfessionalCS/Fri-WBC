@@ -71,7 +71,7 @@ def run_simulation():
 
 
 ## SIMULATION TEST ##
-run_simulation()
+#run_simulation()
 #test_hmfc()
 
 ## PLOTTING ##
