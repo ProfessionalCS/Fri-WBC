@@ -95,7 +95,7 @@ if __name__ == "__main__":
     
     
     seed = 3
-    num_cpu = 20
+    num_cpu = 2
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
     model_name = "point_model"
@@ -115,12 +115,12 @@ if __name__ == "__main__":
             n_steps= 3000,            # Number of steps for each update
             batch_size= 500,           # Batch size for optimization
             verbose=1,                # Verbose idk what that is
-            tensorboard_log='/home/fri/tb.log'
+            tensorboard_log='./log/tb.log'
         )
 
     # making the model learn (train)  (complete)
     model.learn(
-        total_timesteps= 10000000,  # Number of timesteps for model training
+        total_timesteps= 10000,  # Number of timesteps for model training
         log_interval= 1,        # Interval for training progress,
     )
     model.save(model_name)
