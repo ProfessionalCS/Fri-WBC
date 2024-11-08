@@ -1,29 +1,18 @@
 from collections import OrderedDict
 
-print("benu GO TO IT")
+
 
 import numpy as np
 
 from robosuite.environments.manipulation.single_arm_env import SingleArmEnv
-#from robosuite.models.arenas import TableArena
-from robosuite.models.objects import BoxObject
-from robosuite.models.tasks import ManipulationTask
-from robosuite.utils.mjcf_utils import CustomMaterial
-from robosuite.utils.observables import Observable, sensor
-from robosuite.utils.placement_samplers import UniformRandomSampler
-from robosuite.utils.transform_utils import convert_quat
-
-from collections import OrderedDict
-
-
-
-
+# from robosuite.models.arenas import EmptyArena
 
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
 from robosuite.utils.placement_samplers import UniformRandomSampler
 from robosuite.utils.transform_utils import convert_quat
+
 
 
 '''
@@ -31,6 +20,9 @@ Adding stuff from my_model folder
 '''
 from my_model.tasks import GoToPointTask
 from my_model.arenas import EmptyArena
+
+# timer for the task
+
 
 
 class GoToPointTask(SingleArmEnv):
@@ -161,8 +153,8 @@ class GoToPointTask(SingleArmEnv):
         controller_configs=None,
         gripper_types="default",
         initialization_noise="default",
-        # table_full_size=(0.8, 0.8, 0.05),
-        # table_friction=(1.0, 5e-3, 1e-4),
+        #table_full_size=(0.8, 0.8, 0.05),
+        #table_friction=(1.0, 5e-3, 1e-4),
         use_camera_obs=True,
         use_object_obs=True,
         reward_scale=1.0,
@@ -185,6 +177,7 @@ class GoToPointTask(SingleArmEnv):
         camera_segmentations=None,  # {None, instance, class, element}
         renderer="mujoco",
         renderer_config=None,
+        #start_time = time.time()
     ):
         # settings for table top
         # self.table_full_size = table_full_size
@@ -258,14 +251,22 @@ class GoToPointTask(SingleArmEnv):
         # sparse completion reward
         if self._check_success():
             reward = 2.25
-            
-        # basic dence reward
+             # reaching reward
         
-        
+        waypoint = np.array([0.5, 0.5, 0.5]) # the goal position
+        gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
+        dist = np.linalg.norm(gripper_site_pos - waypoint)
+        reaching_reward = 1 - np.tanh(10.0 * dist)
+        reward += reaching_reward
+        return reward
+
         
 
+            
+        # basic dence reward
+
         # # use a shaping reward
-        # elif self.reward_shaping:
+        
 
         #     # reaching reward
         
@@ -277,15 +278,15 @@ class GoToPointTask(SingleArmEnv):
         # reward += reaching_reward
 
         #     # grasping reward
-        #     if self._check_grasp(gripper=self.robots[0].gripper, object_geoms=self.cube):
-        #         reward += 0.25
+        # if self._check_grasp(gripper=self.robots[0].gripper, object_geoms=self.cube):
+        #     reward += 0.25
 
         # # Scale reward if requested
         # if self.reward_scale is not None:
         #     reward *= self.reward_scale / 2.25
         
 
-        return reward
+        #return reward
 
     def _load_model(self):
         """
@@ -294,8 +295,8 @@ class GoToPointTask(SingleArmEnv):
         super()._load_model()
 
         # Adjust base pose accordingly
-        xpos = np.array([0, 0, 0.4])
-        self.robots[0].robot_model.set_base_xpos(xpos)
+        #xpos = self.robots[0].robot_model.base_xpos_offset["table"](self.table_full_size[0])
+        self.robots[0].robot_model.set_base_xpos([0,0,0])
 
         # load model for table top workspace
         mujoco_arena = EmptyArena()
@@ -303,52 +304,11 @@ class GoToPointTask(SingleArmEnv):
         # Arena always gets set to zero origin
         mujoco_arena.set_origin([0, 0, 0])
 
-        # initialize objects of interest
-        tex_attrib = {
-            "type": "cube",
-        }
-        mat_attrib = {
-            "texrepeat": "1 1",
-            "specular": "0.4",
-            "shininess": "0.1",
-        }
-        redwood = CustomMaterial(
-            texture="WoodRed",
-            tex_name="redwood",
-            mat_name="redwood_mat",
-            tex_attrib=tex_attrib,
-            mat_attrib=mat_attrib,
-        )
-        self.cube = BoxObject(
-            name="cube",
-            size_min=[10.020, 0.020, 0.020],  # [0.015, 0.015, 0.015],
-            size_max=[100.022, 0.022, 0.022],  # [0.018, 0.018, 0.018])
-            rgba=[1, 0, 0, 1],
-            material=redwood,
-        )
-
-        # Create placement initializer
-        if self.placement_initializer is not None:
-            self.placement_initializer.reset()
-            self.placement_initializer.add_objects(self.cube)
-        else:
-            self.placement_initializer = UniformRandomSampler(
-                name="ObjectSampler",
-                mujoco_objects=self.cube,
-                x_range=[-0.03, 0.03],
-                y_range=[-0.03, 0.03],
-                rotation=None,
-                ensure_object_boundary_in_range=False,
-                ensure_valid_placement=True,
-                #reference_pos=self.table_offset, 
-                z_offset=0.01,
-            )
-
         # task includes arena, robot, and objects of interest
         self.model = ManipulationTask(
             mujoco_arena=mujoco_arena,
             mujoco_robots=[robot.robot_model for robot in self.robots],
-            mujoco_objects=self.cube,
+            
         )
 
     def _setup_references(self):
@@ -372,38 +332,38 @@ class GoToPointTask(SingleArmEnv):
         observables = super()._setup_observables()
 
         # low-level object information
-        if self.use_object_obs:
-            # Get robot prefix and define observables modality
-            pf = self.robots[0].robot_model.naming_prefix
-            modality = "object"
+        # if self.use_object_obs:
+        #     # Get robot prefix and define observables modality
+        #     pf = self.robots[0].robot_model.naming_prefix
+        #     modality = "object"
 
-            # cube-related observables
-            @sensor(modality=modality)
-            def cube_pos(obs_cache):
-                return np.array(self.sim.data.body_xpos[self.cube_body_id])
+        #     # cube-related observables
+        #     @sensor(modality=modality)
+        #     def cube_pos(obs_cache):
+        #         return np.array(self.sim.data.body_xpos[self.cube_body_id])
 
-            @sensor(modality=modality)
-            def cube_quat(obs_cache):
-                return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
+        #     @sensor(modality=modality)
+        #     def cube_quat(obs_cache):
+        #         return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
 
-            @sensor(modality=modality)
-            def gripper_to_cube_pos(obs_cache):
-                return (
-                    obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
-                    if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
-                    else np.zeros(3)
-                )
+        #     @sensor(modality=modality)
+        #     def gripper_to_cube_pos(obs_cache):
+        #         return (
+        #             obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
+        #             if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
+        #             else np.zeros(3)
+        #         )
 
-            sensors = [cube_pos, cube_quat, gripper_to_cube_pos]
-            names = [s.__name__ for s in sensors]
+        #     sensors = [cube_pos, cube_quat, gripper_to_cube_pos]
+        #     names = [s.__name__ for s in sensors]
 
-            # Create observables
-            for name, s in zip(names, sensors):
-                observables[name] = Observable(
-                    name=name,
-                    sensor=s,
-                    sampling_rate=self.control_freq,
-                )
+        #     # Create observables
+        #     for name, s in zip(names, sensors):
+        #         observables[name] = Observable(
+        #             name=name,
+        #             sensor=s,
+        #             sampling_rate=self.control_freq,
+        #         )
 
         return observables
 
@@ -413,10 +373,10 @@ class GoToPointTask(SingleArmEnv):
         """
         super()._reset_internal()
 
-        # Reset all object positions using initializer sampler if we're not directly loading from an xml
-        if not self.deterministic_reset:
+        # # Reset all object positions using initializer sampler if we're not directly loading from an xml
+        # if not self.deterministic_reset:
 
-            # Sample from the placement initializer for all objects
+        #     # Sample from the placement initializer for all objects
             object_placements = self.placement_initializer.sample()
 
             # Loop through all objects and reset their positions
@@ -435,23 +395,22 @@ class GoToPointTask(SingleArmEnv):
         # Run superclass method first
         super().visualize(vis_settings=vis_settings)
 
-        # Color the gripper visualization site according to its distance to the cube
-        if vis_settings["grippers"]:
-            self._visualize_gripper_to_target(gripper=self.robots[0].gripper, target=self.cube)
+        # # Color the gripper visualization site according to its distance to the cube
+        # if vis_settings["grippers"]:
+        #     self._visualize_gripper_to_target(gripper=self.robots[0].gripper, target=self.cube)
 
     def _check_success(self):
         """
-        Check if cube has been lifted.
+        Check if hand is at the correct spot
 
         Returns:
-            bool: True if cube has been lifted
+            bool: True if xpos is at the spot (within a tolerance)
+            
         """
         return False
-        cube_height = self.sim.data.body_xpos[self.cube_body_id][2]
-        table_height = self.model.mujoco_arena.table_offset[2]
-
-        # cube is higher than the table top above a margin
-        # print("check_success called")
-        if( cube_height > table_height + 0.04):
-            print("Cube lifted")
-        return cube_height > table_height + 0.04
+        if self.robots[0].eef_xpos is None:
+            return False
+        if np.linalg.norm(self.robots[0].eef_xpos - self.cube_pos) < 0.1:
+            return True
+        else: return False
+        

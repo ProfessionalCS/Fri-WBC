@@ -101,7 +101,7 @@ if __name__ == "__main__":
     model_name = "point_model"
     file_path = model_name + ".zip"
     
-    if os.path.exists(file_path) & False:
+    if os.path.exists(file_path) :
         print("Loading model")
         model = PPO.load(model_name)
         model.env = env
@@ -117,10 +117,13 @@ if __name__ == "__main__":
             verbose=1,                # Verbose idk what that is
             tensorboard_log='./log/tb.log'
         )
+    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path='./checkpoints/', name_prefix='rl_model')
+
 
     # making the model learn (train)  (complete)
     model.learn(
         total_timesteps= 10000,  # Number of timesteps for model training
         log_interval= 1,        # Interval for training progress,
+        callback=checkpoint_callback
     )
     model.save(model_name)
