@@ -321,8 +321,8 @@ class GoToPointTask(SingleArmEnv):
         )
         self.cube = BoxObject(
             name="cube",
-            size_min=[10.020, 0.020, 0.020],  # [0.015, 0.015, 0.015],
-            size_max=[100.022, 0.022, 0.022],  # [0.018, 0.018, 0.018])
+            size_min=[0.020, 0.020, 0.020],  # [0.015, 0.015, 0.015],
+            size_max=[0.022, 0.022, 1.022],  # [0.018, 0.018, 0.018])
             rgba=[1, 0, 0, 1],
             material=redwood,
         )
@@ -335,8 +335,8 @@ class GoToPointTask(SingleArmEnv):
             self.placement_initializer = UniformRandomSampler(
                 name="ObjectSampler",
                 mujoco_objects=self.cube,
-                x_range=[-0.03, 0.03],
-                y_range=[-0.03, 0.03],
+                x_range=[0.49, 0.51],
+                y_range=[0.49, 0.51],
                 rotation=None,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
