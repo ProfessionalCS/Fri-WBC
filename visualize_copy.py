@@ -13,7 +13,8 @@ from stable_baselines3.common.vec_env import VecNormalize
 from pathlib import Path  
 from PointEnv import PointEnv
 # from robosuite.environments.base import REGISTERED_ENVS  # loads wrong environment!!!
-
+from robosuite.environments.base import register_env
+from my_environments import GoToPointTask
 
 print("All imports work!")
 print ("Gym Installed Successfully")
@@ -44,29 +45,35 @@ def make_robosuite_env(env_id, options, rank, seed=0):
         return env
     
     return _init
+def make_gym_env(env_id, rank, seed=0):
+    """
+    Utility function for multiprocessed env.
 
-def create_lift_env():
-    env = suite.make( # robosuite env here
-        env_name="Lift", # try with other tasks like "Stack" and "Door"
-        robots="Panda",  # try with other robots like "Sawyer" and "Jaco"
-        has_renderer=True,
-        has_offscreen_renderer=False,
-        use_camera_obs=False,
-        reward_shaping = True # dense reward
-    )
-
-    # wrapping the environment for being compatible with Gym (complete)
-    my_wrapped_env = GymWrapper(env)
-
-    # creating the vector env for stable baselines (I think its needed)
-    my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
-
-    # normalizing (scaling the input from 0 to 1) ==> IS IT LIKE Discout?   (complete)
-    my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
-    return my_vec_env
+    :param env_id: (str) the environment ID
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    """
+    def _init():
+        
+        env = gym.make(env_id, reward_type="dense")
+        env = gym.wrappers.FlattenObservation(env)
+        env = Monitor(env)
+        env.seed(seed + rank)
+        return env
+    set_random_seed(seed)
+    return _init
 
 if __name__=="__main__":
-    env = create_point_env()
+
+    register_env(GoToPointTask)
+    env_options = {}
+    env_options["control_freq"] = 20
+    env_options["render_camera"] = None
+    env_options["use_object_obs"] = False
+    env_options["horizon"] = 1000
+
+    seed = 3
+    env = make_robosuite_env("GoToPointTask",env_options, 1, seed)
 
     model_name = "point_model"
     model_path = model_name + ".zip"
