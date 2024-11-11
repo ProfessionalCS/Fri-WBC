@@ -4,6 +4,7 @@ import robosuite as suite
 
 from stable_baselines3 import PPO     # PPO Model Being trained using  cpu device
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.monitor import Monitor
 import robosuite as suite
 from robosuite.wrappers import GymWrapper
 
@@ -13,8 +14,11 @@ from stable_baselines3.common.vec_env import VecNormalize
 from pathlib import Path  
 from PointEnv import PointEnv
 # from robosuite.environments.base import REGISTERED_ENVS  # loads wrong environment!!!
+import gym
+from stable_baselines3.common.utils import set_random_seed
 from robosuite.environments.base import register_env
 from my_environments import GoToPointTask
+
 
 print("All imports work!")
 print ("Gym Installed Successfully")
@@ -73,7 +77,7 @@ if __name__=="__main__":
     env_options["horizon"] = 1000
 
     seed = 3
-    env = make_robosuite_env("GoToPointTask",env_options, 1, seed)
+    env = make_robosuite_env("GoToPointTask",env_options, 1, seed)()
 
     model_name = "point_model"
     model_path = model_name + ".zip"
