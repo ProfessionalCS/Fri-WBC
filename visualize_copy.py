@@ -92,20 +92,27 @@ if __name__=="__main__":
         # Extract the 'robot0_proprio-state' as the base observation
         # breakpoint()
         # observation_array = obs['robot0_proprio-state']
-        observation_array = obs[0]
+        if isinstance(obs, tuple):
+            observation_array = obs[0]
+        else:
+            observation_array = obs
+        print("Model observation space shape:", model.observation_space.shape)
+        print("Environment observation shape:", observation_array.shape)
+
+
 
         # Check if padding is needed to match the expected observation space (42,)
-        if observation_array.shape[0] < 42:
+        if observation_array.shape[0] < 32:
             # Pad with zeros or concatenate additional parts from the observation dict if necessary
-            observation_array = np.pad(observation_array, (0, 42 - observation_array.shape[0]), 'constant')
+            observation_array = np.pad(observation_array, (0, 32 - observation_array.shape[0]), 'constant')
             # np. pad used from the outside source recommendation
 
         # np.predict used to predict the observation array value 
         action, _states = model.predict(observation_array)
-        # print(f"Action taken: {action}")
+        print(f"Action taken: {action}")
 
         obs, reward, done, info = env.step([action])
-        # print(f"Reward: {reward}, Done: {done}, Info: {info}")
+        print(f"Reward: {reward}, Done: {done}, Info: {info}")
         env.render()
 
         if done:
