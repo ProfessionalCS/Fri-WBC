@@ -75,6 +75,7 @@ def make_gym_env(env_id, rank, seed=0):
     def _init():
         
         env = gym.make(env_id, reward_type="dense")
+        env = gym.wrappers(env)
         env = gym.wrappers.FlattenObservation(env)
         env = Monitor(env)
         env.seed(seed + rank)
@@ -98,16 +99,20 @@ if __name__ == "__main__":
     num_cpu = 2
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
-    model_name = "point_model"
+    model_name = "./training_models/point_model"
+    vec_path = "./training_models/vec_normalize.pkl"
     file_path = model_name + ".zip"
     
     if os.path.exists(file_path) :
         print("Loading model")
+        env = VecNormalize.load(vec_path, env)
         model = PPO.load(model_name)
         model.env = env
 
     else : 
         # Initialize PPO model with parameters included to facilitate more effcient training (parameters included as per request) (complete)
+        print("Creating new model")
+        env = VecNormalize(env)
         model = PPO(
             policy= "MlpPolicy",      # Policy that exists
             env= env,          # Normalized vectorized env
@@ -127,3 +132,4 @@ if __name__ == "__main__":
         callback=checkpoint_callback
     )
     model.save(model_name)
+    env.save(vec_path)

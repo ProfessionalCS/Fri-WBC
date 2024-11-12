@@ -60,63 +60,74 @@ def make_gym_env(env_id, rank, seed=0):
     def _init():
         
         env = gym.make(env_id, reward_type="dense")
-        env = gym.wrappers.FlattenObservation(env)
         env = Monitor(env)
+        env = gym.wrappers.FlattenObservation(env)
         env.seed(seed + rank)
         return env
     set_random_seed(seed)
     return _init
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     register_env(GoToPointTask)
+    env_id = "GoToPointTask"
+    
     env_options = {}
     env_options["control_freq"] = 20
     env_options["render_camera"] = None
     env_options["use_object_obs"] = False
     env_options["horizon"] = 1000
+    options = env_options
+    
+    env =  suite.make(
+        env_name="GoToPointTask", # try with other tasks like "Stack" and "Door"
+        robots="Panda",  # try with other robots like "Sawyer" and "Jaco"
+        has_renderer=True,
+        has_offscreen_renderer=False,
+        use_camera_obs=False,
+        **options
+        )
+    
 
     seed = 3
-    env = make_robosuite_env("GoToPointTask",env_options, 1, seed)()
+    env_gym = GymWrapper(env)
+    env = DummyVecEnv([lambda : env_gym])
+    
+    # Load the model
+    env = VecNormalize.load("./training_models/vec_normalize.pkl", env)
 
     model_name = "point_model"
-    model_path = model_name + ".zip"
+    model_path = "./training_models/point_model.zip"
     model = PPO.load(model_path, env=env)
-
-
+    
+    
     obs = env.reset()
     print("Initial observation:", obs)
-    # print("Expected observation space:", my_vec_env.observation_space)
-    
-    for i in range(1000):
-        # Extract the 'robot0_proprio-state' as the base observation
-        # breakpoint()
-        # observation_array = obs['robot0_proprio-state']
-        if isinstance(obs, tuple):
-            observation_array = obs[0]
-        else:
-            observation_array = obs
-        print("Model observation space shape:", model.observation_space.shape)
-        print("Environment observation shape:", observation_array.shape)
 
+    for i in range(100000):
+        observation_array = obs[0]  # Assuming the observation format is correct as a numpy array
 
+        # Ensure the observation has the correct shape for your model
+        # if observation_array.shape[0] < 32:
+        #     observation_array = np.pad(observation_array, (0, 32 - observation_array.shape[0]), 'constant')
 
-        # Check if padding is needed to match the expected observation space (42,)
-        if observation_array.shape[0] < 32:
-            # Pad with zeros or concatenate additional parts from the observation dict if necessary
-            observation_array = np.pad(observation_array, (0, 32 - observation_array.shape[0]), 'constant')
-            # np. pad used from the outside source recommendation
-
-        # np.predict used to predict the observation array value 
-        action, _states = model.predict(observation_array)
+        # Predict the action
+        action, _states = model.predict(obs)
         print(f"Action taken: {action}")
 
-        obs, reward, done, info = env.step([action])
+        # Pass the action to the environment
+        # action = np.array(action)  # Ensure the action is in the correct format
+
+        # Check the return value of step(action)
+        # result = env.step(action)
+        # print("Step result:", result)
+
+        # Now unpack based on the result
+        #print("Step result:" + action)
+        obs, reward, done, info = env.step(action)  # Adjust this based on what step() returns
+
         print(f"Reward: {reward}, Done: {done}, Info: {info}")
-        env.render()
+        env_gym.render()
 
         if done:
-            obs = env.reset()
-
-    env.reset()
-
+            obs = env.reset()  # Reset environment if done
