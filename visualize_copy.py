@@ -20,6 +20,7 @@ from robosuite.environments.base import register_env
 from my_environments import GoToPointTask
 
 
+
 print("All imports work!")
 print ("Gym Installed Successfully")
 

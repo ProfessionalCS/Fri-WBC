@@ -228,64 +228,57 @@ class GoToPointTask(SingleArmEnv):
             renderer_config=renderer_config,
         )
 
-    def reward(self, action=None):
-        """
-        Reward function for the task.
-
-        Sparse un-normalized reward:
-
-            - a discrete reward of 2.25 is provided if the cube is lifted
-
-        Un-normalized summed components if using reward shaping:
-
-            - Reaching: in [0, 1], to encourage the arm to reach the cube
-            - Grasping: in {0, 0.25}, non-zero if arm is grasping the cube
-            - Lifting: in {0, 1}, non-zero if arm has lifted the cube
-
-        The sparse reward only consists of the lifting component.
-
-        Note that the final reward is normalized and scaled by
-        reward_scale / 2.25 as well so that the max score is equal to reward_scale
-
-        Args:
-            action (np array): [NOT USED]
-
-        Returns:
-            float: reward value
-        """
-        reward = 0.0
-
-        # sparse completion reward
-        if self._check_success():
-            reward = 2.25
+    # # I commented out original reward function to avoid overriding and wrong results
+    # def reward(self, action=None):
+    #     """
+    #     Reward function for the task.
+    #     Sparse un-normalized reward:
+    #         - a discrete reward of 2.25 is provided if the cube is lifted
+    #     Un-normalized summed components if using reward shaping:
+    #         - Reaching: in [0, 1], to encourage the arm to reach the cube
+    #         - Grasping: in {0, 0.25}, non-zero if arm is grasping the cube
+    #         - Lifting: in {0, 1}, non-zero if arm has lifted the cube
+    #     The sparse reward only consists of the lifting component.
+    #     Note that the final reward is normalized and scaled by
+    #     reward_scale / 2.25 as well so that the max score is equal to reward_scale
+    #     Args:
+    #         action (np array): [NOT USED]
+    #     Returns:
+    #         float: reward value
+    #     """
+    #     reward = 0.0
+    #     # sparse completion reward
+    #     if self._check_success():
+    #         reward = 2.25
             
-        # basic dence reward
         
-        
-        
+    # added reward based on how close the gripper is to the target
+    # task is to ensure the loss is lowered ==> will adjust reward accordingly
 
-        # # use a shaping reward
-        # elif self.reward_shaping:
+    def reward(self, action):
+        gripper_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
+        distance = np.linalg.norm(gripper_pos - self.current_target_position)
+        reward = 1 - np.tanh(5.0 * distance) # from 10.0 to 5.0 how close gripper to tgt
 
-        #     # reaching reward
-        
-        # cube_pos = self.sim.data.body_xpos[self.cube_body_id]
-        # gripper_site_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
-        
-        # dist = np.linalg.norm(gripper_site_pos - cube_pos)# distance from tje cube to the gripper
-        # reaching_reward = 1 - np.tanh(10.0 * dist) 
-        # reward += reaching_reward
+        # I added new elemenents to the reward to ensure precision ==> need to know if it needs to be
+        previous_distance = getattr(self, "previous_distance", float("inf")) #getattr used in case prev_distance attribute doesn't exist
+        if distance < previous_distance:
+                reward += 0.1  # more points for getting closer to teh target
+        self.previous_distance = distance
 
-        #     # grasping reward
-        #     if self._check_grasp(gripper=self.robots[0].gripper, object_geoms=self.cube):
-        #         reward += 0.25
+        if distance < 0.05:
+            reward += 10.0  # higher encouragment
 
-        # # Scale reward if requested
-        # if self.reward_scale is not None:
-        #     reward *= self.reward_scale / 2.25
-        
+        reward -= 0.01 * self.current_step  # <== small penalty that will increase as we progresss
+        self.current_step += 1
 
         return reward
+    
+
+    def set_target_position(self, target_position):
+        # using this to update the current target position
+        self.current_target_position = target_position
+        
 
     def _load_model(self):
         """
@@ -412,6 +405,7 @@ class GoToPointTask(SingleArmEnv):
         Resets simulation internal configurations.
         """
         super()._reset_internal()
+        self.current_step = 0
 
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
@@ -422,6 +416,10 @@ class GoToPointTask(SingleArmEnv):
             # Loop through all objects and reset their positions
             for obj_pos, obj_quat, obj in object_placements.values():
                 self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
+
+        # here we ensure that target position is set each time when env resets internally #
+        target_position = np.array([0.3, 0.2, 0.1])  # can change value if needed, let me know if need random
+        self.set_target_position(target_position)
 
     def visualize(self, vis_settings):
         """
