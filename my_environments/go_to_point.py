@@ -329,12 +329,12 @@ class GoToPointTask(SingleArmEnv):
             self.placement_initializer = UniformRandomSampler(
                 name="ObjectSampler",
                 mujoco_objects=self.cube,
-                x_range=[0.49, 0.51],
-                y_range=[0.49, 0.51],
+                x_range=[0, 0],
+                y_range=[0, 0],
                 rotation=None,
                 ensure_object_boundary_in_range=False,
                 ensure_valid_placement=True,
-                #reference_pos=self.table_offset, 
+                reference_pos= [0, .5, .5] , 
                 z_offset=0.01,
             )
 
