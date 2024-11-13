@@ -419,7 +419,7 @@ class GoToPointTask(SingleArmEnv):
                 self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
 
         # here we ensure that target position is set each time when env resets internally #
-        target_position = np.array([0.3, 0.2, 0.1])  # can change value if needed, let me know if need random
+        target_position = np.array([0.5, 0.0, 1.0])  # can change value if needed, let me know if need random
         self.set_target_position(target_position)
 
     def visualize(self, vis_settings):
