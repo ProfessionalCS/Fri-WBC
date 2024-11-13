@@ -30,22 +30,23 @@ if __name__=="__main__":
     file_path = "point_model.zip"
     if os.path.exists(file_path):
         print("Loading model")
-        model = PPO.load("point_model")
+        model = PPO.load("point_model")  # change to if model exists and if not create new one
         model.env = my_vec_env
     else:
         model = PPO(
-            policy="MlpPolicy",      
+            policy="MlpPolicy",   # add some logic that change the names for every chabge in the model training   
             env=my_vec_env,          
-            learning_rate=0.0003,   
+            learning_rate=0.0003,   # increase later to improve training
             n_steps=3000,            
             batch_size=500,          
             verbose=1,                
-            tensorboard_log='/home/fri/tb.log'
-        )
+            tensorboard_log="/home/anastasiia/UMI-On-Legs-Reinforcement-Learning - GENERAL/log/tb.log"
+        ) # tensorboard_log cformer directory use "/home/anastasiia/UMI-On-Legs-Reinforcement-Learning - GENERAL/log/tb.log"
+        # "./log/tb.log" <==== or ./log/anastasiia//tb.log
 
 
     model.learn(
-        total_timesteps=25000,  
+        total_timesteps=50000,  
         log_interval=1
     )
 
