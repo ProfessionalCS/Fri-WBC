@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
         # Predict the action
         action, _states = model.predict(obs)
-        print(f"Action taken: {action}")
+        #print(f"Action taken: {action}")
 
         # Pass the action to the environment
         # action = np.array(action)  # Ensure the action is in the correct format
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         #print("Step result:" + action)
         obs, reward, done, info = env.step(action)  # Adjust this based on what step() returns
 
-        print(f"Reward: {reward}, Done: {done}, Info: {info}")
+        print(f"Reward: {reward}")#, Done: {done}, Info: {info}")
         env_gym.render()
 
         if done:
