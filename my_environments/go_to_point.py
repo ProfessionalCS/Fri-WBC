@@ -269,8 +269,9 @@ class GoToPointTask(SingleArmEnv):
         if distance < 0.05:
             reward += 10.0  # higher encouragment
 
-        reward -= 0.01 * self.current_step  # <== small penalty that will increase as we progresss
-        self.current_step += 1
+        # remember in case need exponent the reward
+        # reward -= 0.01 * self.current_step  # <== small penalty that will increase as we progresss
+        # self.current_step += 1
 
         return reward
     
