@@ -1,88 +1,29 @@
-import numpy as np
 import robosuite as suite
-
-from stable_baselines3 import PPO  # PPO Model Being trained using  cpu device
+from robosuite.wrappers import GymWrapper
+from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.monitor import Monitor
-from robosuite.wrappers import GymWrapper
+from robosuite.utils.placement_samplers import UniformRandomSampler
+from my_environments import GoToPointTask
 
-import torch
-from pathlib import Path  
-from PointEnv import PointEnv
-import gym
-from stable_baselines3.common.utils import set_random_seed
-from my_environments import GoToPointTask  # Assuming go_to_point.py is in a directory named `my_environments`
-
-print("All imports work!")
-print( "Gym Installed Successfully")
-
-def make_robosuite_env(env_id, options, rank, seed=0):
-    """
-    Utility function for multiprocessed env.
-
-    :param env_id: (str) the environment ID
-    :param options: (dict) additional argumen,mASDts to pass to the specific environment class initializer
-    :param seed: (int) the inital seed for RNG
-    :param rank: (int) index of the subprocess
-    """
-    def _init():
-        temp_env = suite.make(
-            env_name="GoToPointTask",  # try with other tasks like "Stack" and "Door"
-            robots="Panda",  # try with other robots like "Sawyer" and "Jaco"
-            has_renderer=True,
-            has_offscreen_renderer=False,
-            use_camera_obs=False,
-            **options
-        )
-        env = GymWrapper(temp_env)
-        env = Monitor(env)
-        return env
-    return _init
-
-def make_gym_env(env_id, rank, seed=0):
-    """
-    Utility function for multiprocessed env.
-
-    :param env_id: (str) the environment ID
-    :param seed: (int) the inital seed for RNG
-    :param rank: (int) index of the subprocess
-    """
-    def _init():
-        
-        env = gym.make(env_id, reward_type="dense")
-        env = Monitor(env)
-        env = gym.wrappers.FlattenObservation(env)
-        env.seed(seed + rank)
-        return env
-    set_random_seed(seed)
-    return _init
-
-if __name__ == "__main__":
-
-    # commented out because it gave me error
-    # register_env(GoToPointTask)
-    # env_id = "GoToPointTask"
-
-    # Define environment options
-    env_options = {}
-    env_options["control_freq"] = 20
-    env_options["render_camera"] = None
-    env_options["use_object_obs"] = False
-    env_options["horizon"] = 1000
-    options = env_options
-
-    # Initialize the GoToPointTask environment with robosuite
+def make_env():
+    placement_initializer = UniformRandomSampler(
+        name="object_placement_sampler",
+        x_range=(0.1, 0.2),
+        y_range=(0.1, 0.2),
+        ensure_object_boundary_in_range=False,
+        ensure_valid_placement=True,
+        reference_pos=(0.0, 0.0, 0.8),
+        z_offset=0.01,
+    )
     env = suite.make(
-        env_name="GoToPointTask",  # try with other tasks like "Stack" and "Door"
-        robots="Panda",   # try with other robots like "Sawyer" and "Jaco"
+        env_name="GoToPointTask",
+        robots="Panda",
         has_renderer=True,
         has_offscreen_renderer=False,
         use_camera_obs=False,
-        **options
+        placement_initializer=placement_initializer,
     )
-
-    # Wrap with GymWrapper and DummyVecEnv for compatibility with Stable-Baselines3
-    seed = 3
     env_gym = GymWrapper(env)
     env = DummyVecEnv([lambda: env_gym])
 
@@ -126,6 +67,7 @@ if __name__ == "__main__":
         action, _states = model.predict(obs)
 
         obs, reward, done, info = env.step(action)
+        
 
         # I think this helps to keep track of data
         print(f"Reward: {reward}, Done: {done}, Info: {info}") # Adjust this based on what step() returns
@@ -134,3 +76,4 @@ if __name__ == "__main__":
 
         if done:
             obs = env.reset() # Reset environment if done
+
