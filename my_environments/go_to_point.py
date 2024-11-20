@@ -365,6 +365,26 @@ class GoToPointTask(SingleArmEnv):
         """
         observables = super()._setup_observables()
 
+        ###########################################################################################
+        # adding gripper information for the position sensor
+        @sensor(modality="robot")
+        def gripper_pos(obs_cache):  # from facts I can update?
+            return np.array(self.sim.data.site_xpos[self.robots[0].eef_site_id]) # taken form here
+        
+         # adding gripper position observable 
+        observables["gripper_pos"] = Observable(
+        name = "gripper_pos",
+        sensor = gripper_pos,
+        sampling_rate = self.control_freq, # on its own
+        )
+
+        # here I can define gripper to cube distance to ease the tracking process on how far is ot form the cube
+        def gripper_to_cube_pos(obs_cache):
+            if "gripper_pos" in obs_cache and "cube_pos" in obs_cache:  # get hand and get cube pos
+                return np.linalg.norm(obs_cache["gripper_pos"] - obs_cache["cube_pos"])
+        
+            return np.zeros(1)  # if robot doesn't know ehre the cube is return 0 array size 1
+
         # low-level object information
         if self.use_object_obs:
             # Get robot prefix and define observables modality
@@ -399,8 +419,10 @@ class GoToPointTask(SingleArmEnv):
                     sampling_rate=self.control_freq,
                 )
 
+        # here I will return updated information on the observables dictionary 
         return observables
 
+        ############################################################################################
     def _reset_internal(self):
         """
         Resets simulation internal configurations.
