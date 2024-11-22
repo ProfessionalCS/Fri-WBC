@@ -15,10 +15,6 @@ from robosuite.utils.transform_utils import convert_quat
 
 from collections import OrderedDict
 
-
-
-
-
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
@@ -191,15 +187,46 @@ class GoToPointTask(SingleArmEnv):
         # self.table_friction = table_friction
         # self.table_offset = np.array((0, 0, 0.8))
 
-        # reward configuration
+        # I added controlers because nothing worked 
+        if controller_configs is None:
+            controller_configs = {
+                "type": "OSC_POSITION",  # cartesian position controller
+                "input_max": 1,
+                "input_min": -1,
+                "output_max": 0.5,
+                "output_min": -0.5,
+                "kp": 150,  # can reduce to 50 to solw down I guess
+                "damping_ratio": 1,  # for smooth motion
+                "impedance_mode": "fixed",  # fixed stiffness
+                "kp_limits": [0, 300], 
+                "damping_ratio_limits": [0, 10],
+                "position_limits": None,  # no cartesian position limits
+                "orientation_limits": None,  # no cartesian orientation limits
+                "interpolation": "linear",  # this line here I need I guess
+                "ramp_ratio": 0.2,
+            }
+
+
+        if placement_initializer is None:
+            placement_initializer = UniformRandomSampler(
+            name="ObjectSampler",
+            mujoco_objects=None,  # Start with no objects
+            x_range=[-0.2, 0.2],
+            y_range=[-0.2, 0.2],
+            rotation=None,
+            ensure_object_boundary_in_range=False,
+            ensure_valid_placement=True,
+            z_offset=0.01,
+         )
+            
+        self.placement_initializer = placement_initializer
+
         self.reward_scale = reward_scale
         self.reward_shaping = reward_shaping
 
         # whether to use ground-truth object states
         self.use_object_obs = use_object_obs
 
-        # object placement initializer
-        self.placement_initializer = placement_initializer
 
         super().__init__(
             robots=robots,
@@ -227,6 +254,7 @@ class GoToPointTask(SingleArmEnv):
             renderer=renderer,
             renderer_config=renderer_config,
         )
+                    # reward configuration
 
     # # I commented out original reward function to avoid overriding and wrong results
     # def reward(self, action=None):
@@ -327,16 +355,16 @@ class GoToPointTask(SingleArmEnv):
             self.placement_initializer.add_objects(self.cube)
         else:
             self.placement_initializer = UniformRandomSampler(
-                name="ObjectSampler",
-                mujoco_objects=self.cube,
-                x_range=[0, 0],
-                y_range=[0, 0],
-                rotation=None,
-                ensure_object_boundary_in_range=False,
-                ensure_valid_placement=True,
-                reference_pos= [0, .5, .5] , 
-                z_offset=0.01,
-            )
+            name="ObjectSampler",
+            mujoco_objects=self.cube,
+            x_range=[-0.2, 0.2],
+            y_range=[-0.2, 0.2],
+            rotation=None,
+            ensure_object_boundary_in_range=False,
+            ensure_valid_placement=True,
+            reference_pos=[0.0, 0.5, 0.02],
+            z_offset=0.01,
+        )
 
         # task includes arena, robot, and objects of interest
         self.model = ManipulationTask(
@@ -443,6 +471,71 @@ class GoToPointTask(SingleArmEnv):
         # here we ensure that target position is set each time when env resets internally #
         target_position = np.array([0.5, 0.0, 1.0])  # can change value if needed, let me know if need random
         self.set_target_position(target_position)
+        #### I made changes here! ####
+        # finding gripper's starting pos
+        start_position = np.array(self.sim.data.site_xpos[self.robots[0].eef_site_id])
+        # attmpting to create a trajectory/path from start to target
+        self.generated_trajectory = self.generate_trajectory(
+        start=start_position,
+        target=target_position,
+        num_steps=50  # number of positions in the path
+)
+
+    def generate_trajectory(self, start, target, num_steps):  # num_steps = 100 to ensure less fast I guess
+        trajectory = [
+            [0.5, 0.0, 1.0],  # first point
+            # [0.4, -0.1, 1.2],  # second point  negative values to move left
+            # [0.3, 0.1, 1.1],   # third point
+            # [0.2, -0.2, 1.3],  # fourth point   idk if its what needed 
+    ]
+
+        return np.array(trajectory)
+
+    # or can do these too
+    #     hardcoded_points = [
+    #     [0.5, 0.0, 1.0],  # First point
+    #     [0.4, -0.1, 1.2],  # Second point
+    # ]
+
+    # # generate points between the last hardcoded point and the target
+    # if start is not None and target is not None:
+    #     dynamic_points = np.linspace(hardcoded_points[-1], target, num_steps)
+    #     return np.concatenate([hardcoded_points, dynamic_points], axis=0)
+    
+    # # If no dynamic points are needed, just return hardcoded ones
+    # return np.array(hardcoded_points)
+        # slowly getting from start to teh target
+
+        # return np.linspace(start, target, num_steps)
+    
+    #this one is my control element ==> must follow points generated in generate trajectiry
+    def move_along_trajectiry_waypoints(self):
+        """
+        Moves the robot along the generated trajectory step by step.
+        """
+        # If there are still waypoints to follow
+        if self.current_step < len(self.generated_trajectory):
+            # get the next waypoint position
+            next_position_waypoint = self.generated_trajectory[self.current_step]
+            # print the target and current positions
+            print(f"Step {self.current_step}: Moving to {next_position_waypoint}")
+            print(f"Current Position: {self.sim.data.site_xpos[self.robots[0].eef_site_id]}")
+            action = np.concatenate((next_position_waypoint, [0.0]))  # [x, y, z, gripper_action]
+            self.robots[0].control(action)
+            # controller to move toward the next waypoint
+            self.robots[0].control(action)
+            # increment to the next waypoint
+            self.current_step += 1
+        # get the next waypoint position
+            next_position_waypoint = self.generated_trajectory[self.current_step]
+
+        # print the target and current positions
+            print(f"Step {self.current_step}: Moving to {next_position_waypoint}")
+            print(f"Current Position: {self.sim.data.site_xpos[self.robots[0].eef_site_id]}")
+        #  controller to move toward the next waypoint
+            #self.robots[0].controller.set_action({"position": next_position_waypoint})
+        # increment to the next waypoint
+            self.current_step += 1
 
     def visualize(self, vis_settings):
         """
@@ -453,10 +546,13 @@ class GoToPointTask(SingleArmEnv):
                 component should be visualized. Should have "grippers" keyword as well as any other relevant
                 options specified.
         """
-        # Run superclass method first
+        # added thsi function here to move along the path###
+        self.move_along_trajectiry_waypoints() 
+
+        # run superclass method first
         super().visualize(vis_settings=vis_settings)
 
-        # Color the gripper visualization site according to its distance to the cube
+        # color the gripper visualization site according to its distance to the cube | is it needed??
         if vis_settings["grippers"]:
             self._visualize_gripper_to_target(gripper=self.robots[0].gripper, target=self.cube)
 

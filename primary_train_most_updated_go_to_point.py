@@ -26,7 +26,7 @@ latest_model_path = os.path.join(checkpoint_directory, "point_model_latest_check
 
 if __name__=="__main__":
 
-    target_ee_position = np.array([0.3,0,0])
+    target_ee_position = np.array([0.5, 0.0, 1.0])
 
     env = PointEnv(
         robots="Panda",  
@@ -69,7 +69,7 @@ if __name__=="__main__":
 ################################################################################################################
 
     model.learn(
-        total_timesteps=100000,   #updated so it trains longer
+        total_timesteps=1000000,   #updated so it trains longer
         log_interval=1
     )
 
