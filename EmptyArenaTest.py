@@ -20,6 +20,7 @@ env = suite.make(
     has_renderer=True,
     has_offscreen_renderer=False,
     use_camera_obs=False,
+    
 )
 
 # reset the environment

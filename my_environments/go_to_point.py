@@ -186,7 +186,7 @@ class GoToPointTask(SingleArmEnv):
         renderer="mujoco",
         renderer_config=None,
         
-        target_coordinate= None,
+        target_coordinate= np.array([0.0, 0.0, 0])  # default target position
         
     ):
         # settings for table top

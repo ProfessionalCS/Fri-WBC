@@ -124,7 +124,8 @@ if __name__ == "__main__":
         # Now unpack based on the result
         #print("Step result:" + action)
         obs, reward, done, info = env.step(action)  # Adjust this based on what step() returns
-        print(f"Reward: {reward}")#, Done: {done}, Info: {info}")
+        #print(f"Reward: {reward}")#, Done: {done}, Info: {info}")
+        print("Action:", action)
         env_gym.render()
 
         if done:
