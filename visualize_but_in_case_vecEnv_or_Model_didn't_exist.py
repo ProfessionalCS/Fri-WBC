@@ -124,8 +124,11 @@ if __name__ == "__main__":
     # run model this number of steps if needed
     for i in range(100000):
         action, _states = model.predict(obs)
+        
 
         obs, reward, done, info = env.step(action)
+
+        # breakpoint()
 
         # I think this helps to keep track of data
         print(f"Reward: {reward}, Done: {done}, Info: {info}") # Adjust this based on what step() returns

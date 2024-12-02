@@ -506,36 +506,36 @@ class GoToPointTask(SingleArmEnv):
     # return np.array(hardcoded_points)
         # slowly getting from start to teh target
 
-        # return np.linspace(start, target, num_steps)
+        # return np.linspace(start, target, num_steps) <=== use this one
     
     #this one is my control element ==> must follow points generated in generate trajectiry
-    def move_along_trajectiry_waypoints(self):
-        """
-        Moves the robot along the generated trajectory step by step.
-        """
-        # If there are still waypoints to follow
-        if self.current_step < len(self.generated_trajectory):
-            # get the next waypoint position
-            next_position_waypoint = self.generated_trajectory[self.current_step]
-            # print the target and current positions
-            print(f"Step {self.current_step}: Moving to {next_position_waypoint}")
-            print(f"Current Position: {self.sim.data.site_xpos[self.robots[0].eef_site_id]}")
-            action = np.concatenate((next_position_waypoint, [0.0]))  # [x, y, z, gripper_action]
-            self.robots[0].control(action)
-            # controller to move toward the next waypoint
-            self.robots[0].control(action)
-            # increment to the next waypoint
-            self.current_step += 1
-        # get the next waypoint position
-            next_position_waypoint = self.generated_trajectory[self.current_step]
+    # def move_along_trajectiry_waypoints(self):
+    #     """
+    #     Moves the robot along the generated trajectory step by step.
+    #     """
+    #     # If there are still waypoints to follow
+    #     if self.current_step < len(self.generated_trajectory):
+    #         # get the next waypoint position
+    #         next_position_waypoint = self.generated_trajectory[self.current_step]
+    #         # print the target and current positions
+    #         print(f"Step {self.current_step}: Moving to {next_position_waypoint}")
+    #         print(f"Current Position: {self.sim.data.site_xpos[self.robots[0].eef_site_id]}")
+    #         action = np.concatenate((next_position_waypoint, [0.0]))  # [x, y, z, gripper_action]
+    #         self.robots[0].control(action)
+    #         # controller to move toward the next waypoint
+    #         self.robots[0].control(action)
+    #         # increment to the next waypoint
+    #         self.current_step += 1
+    #     # get the next waypoint position
+    #         next_position_waypoint = self.generated_trajectory[self.current_step]
 
-        # print the target and current positions
-            print(f"Step {self.current_step}: Moving to {next_position_waypoint}")
-            print(f"Current Position: {self.sim.data.site_xpos[self.robots[0].eef_site_id]}")
-        #  controller to move toward the next waypoint
-            #self.robots[0].controller.set_action({"position": next_position_waypoint})
-        # increment to the next waypoint
-            self.current_step += 1
+    #     # print the target and current positions
+    #         print(f"Step {self.current_step}: Moving to {next_position_waypoint}")
+    #         print(f"Current Position: {self.sim.data.site_xpos[self.robots[0].eef_site_id]}")
+    #     #  controller to move toward the next waypoint
+    #         #self.robots[0].controller.set_action({"position": next_position_waypoint})
+    #     # increment to the next waypoint
+    #         self.current_step += 1
 
     def visualize(self, vis_settings):
         """
@@ -547,7 +547,7 @@ class GoToPointTask(SingleArmEnv):
                 options specified.
         """
         # added thsi function here to move along the path###
-        self.move_along_trajectiry_waypoints() 
+        # self.move_along_trajectiry_waypoints() 
 
         # run superclass method first
         super().visualize(vis_settings=vis_settings)
