@@ -13,7 +13,7 @@ from stable_baselines3.common.vec_env import VecNormalize
 from pathlib import Path  
 import os
 
-from archive.PointEnv import PointEnv
+# from archive.PointEnv import PointEnv
 
 # Register Enviorment
 import gym

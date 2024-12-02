@@ -9,8 +9,8 @@ from robosuite.wrappers import GymWrapper
 import torch
 from stable_baselines3.common.vec_env import VecNormalize
 # File Finding 
-from pathlib import Path  
-from archive.PointEnv import PointEnv
+# from pathlib import Path  
+# from archive.PointEnv import PointEnv
 # from robosuite.environments.base import REGISTERED_ENVS  # loads wrong environment!!!
 import gym
 from stable_baselines3.common.utils import set_random_seed
