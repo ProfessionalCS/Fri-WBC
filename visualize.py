@@ -1,95 +1,131 @@
 # import cv2
 import numpy as np
 import robosuite as suite
-
 from stable_baselines3 import PPO     # PPO Model Being trained using  cpu device
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.monitor import Monitor
 import robosuite as suite
 from robosuite.wrappers import GymWrapper
-
 import torch
 from stable_baselines3.common.vec_env import VecNormalize
 # File Finding 
 from pathlib import Path  
-from PointEnv import PointEnv
+from archive.PointEnv import PointEnv
 # from robosuite.environments.base import REGISTERED_ENVS  # loads wrong environment!!!
+import gym
+from stable_baselines3.common.utils import set_random_seed
+from robosuite.environments.base import register_env
+from my_environments import GoToPointTask
+import random
+
 
 
 print("All imports work!")
 print ("Gym Installed Successfully")
 
 
-def create_point_env():
-    target_ee_position = np.array([0.3,0,0])
+def make_robosuite_env(env_id, options, rank, seed=0):
+    """
+    Utility function for multiprocessed env.
 
-    env = PointEnv(
-        robots="Panda",  
-        has_renderer=True,  # Rn I unabled visual sim if its needed
-        has_offscreen_renderer=False,
-        use_camera_obs=False,
-        reward_shaping=True  #  dense reward
-    )
-    env.set_target_position(target_ee_position)
-    # Vectorize and Normalize Environment
-    my_wrapped_env = GymWrapper(env)
-    my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
-    my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
-    return my_vec_env
-
-def create_lift_env():
-    env = suite.make( # robosuite env here
-        env_name="Lift", # try with other tasks like "Stack" and "Door"
-        robots="Panda",  # try with other robots like "Sawyer" and "Jaco"
+    :param env_id: (str) the environment ID
+    :param options: (dict) additional arguments to pass to the specific environment class initializer
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    """
+    
+    def _init():
+        
+        temp_env = suite.make(
+        env_name="GoToPointTask", # try with other tasks like "Stack" and "Door"
+        robots="Sawyer",  # try with other robots like "Sawyer" and "Jaco"
         has_renderer=True,
         has_offscreen_renderer=False,
         use_camera_obs=False,
-        reward_shaping = True # dense reward
-    )
+        **options
+        )
+        env = GymWrapper(temp_env)
+        env = Monitor(env)
+        return env
+    
+    return _init
+def make_gym_env(env_id, rank, seed=0):
+    """
+    Utility function for multiprocessed env.
 
-    # wrapping the environment for being compatible with Gym (complete)
-    my_wrapped_env = GymWrapper(env)
+    :param env_id: (str) the environment ID
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    """
+    def _init():
+        env = gym.make(env_id, reward_type="dense")
+        env = Monitor(env)
+        env = gym.wrappers.FlattenObservation(env)
+        env.seed(seed + rank)
+        return env
+    set_random_seed(seed)
+    return _init
 
-    # creating the vector env for stable baselines (I think its needed)
-    my_vec_env = DummyVecEnv([lambda: my_wrapped_env])
-
-    # normalizing (scaling the input from 0 to 1) ==> IS IT LIKE Discout?   (complete)
-    my_vec_env = VecNormalize(my_vec_env, norm_obs=True, norm_reward=True)
-    return my_vec_env
-
-if __name__=="__main__":
-    env = create_point_env()
-
+if __name__ == "__main__":
+    register_env(GoToPointTask)
+    env_id = "GoToPointTask"
+    env_options = {}
+    env_options["control_freq"] = 20
+    env_options["render_camera"] = None
+    env_options["use_object_obs"] = False
+    env_options["horizon"] = 1000
+    options = env_options
+    
+    # Grab random seed 
+    seed = 42  # You can replace 42 with any integer value you prefer
+    seed = random.randint(0, 4)
+    if seed % 4 == 0:  # first one testing
+            target_coordinate_temp = np.array([0.5, 0.1, 0.1])
+    elif seed % 4 == 1:  # second one testing
+            target_coordinate_temp = np.array([0.2, 0.2, 0.2])
+    elif seed % 4 == 2:  # third one testing
+            target_coordinate_temp = np.array([0.3, 0.3, 0.3])
+    elif seed % 4 == 3:  # fourth one testing
+            target_coordinate_temp = np.array([0.4, 0.4, 0.4])
+    print(f"Seed: {seed} and Target Coordinate: {target_coordinate_temp}")
+    
+    env =  suite.make(
+        env_name="GoToPointTask", # try with other tasks like "Stack" and "Door"
+        robots="Sawyer",  # try with other robots like "Sawyer" and "Jaco"
+        has_renderer=True,
+        has_offscreen_renderer=False,
+        use_camera_obs=False,
+        target_coordinate = target_coordinate_temp,
+        **options
+        )
+    env_gym = GymWrapper(env)
+    env = DummyVecEnv([lambda : env_gym])
+    # Load the model
+    env = VecNormalize.load("./data_and_models/training_models/vec_normalize.pkl", env)
     model_name = "point_model"
-    model_path = model_name + ".zip"
+    model_path = "./data_and_models/training_models/point_model.zip"
     model = PPO.load(model_path, env=env)
-
-
     obs = env.reset()
     print("Initial observation:", obs)
-    # print("Expected observation space:", my_vec_env.observation_space)
-    
-    for i in range(1000):
-        # Extract the 'robot0_proprio-state' as the base observation
-        # breakpoint()
-        # observation_array = obs['robot0_proprio-state']
-        observation_array = obs[0]
 
-        # Check if padding is needed to match the expected observation space (42,)
-        if observation_array.shape[0] < 42:
-            # Pad with zeros or concatenate additional parts from the observation dict if necessary
-            observation_array = np.pad(observation_array, (0, 42 - observation_array.shape[0]), 'constant')
-            # np. pad used from the outside source recommendation
+    for i in range(10000):
 
-        # np.predict used to predict the observation array value 
-        action, _states = model.predict(observation_array)
-        # print(f"Action taken: {action}")
+        # Predict the action
+        action, _states = model.predict(obs)
+        #print(f"Action taken: {action}")
 
-        obs, reward, done, info = env.step([action])
-        # print(f"Reward: {reward}, Done: {done}, Info: {info}")
-        env.render()
+        # Pass the action to the environment
+        # action = np.array(action)  # Ensure the action is in the correct format
+
+        # Check the return value of step(action)
+        # result = env.step(action)
+        # print("Step result:", result)
+        
+        # Now unpack based on the result
+        #print("Step result:" + action)
+        obs, reward, done, info = env.step(action)  # Adjust this based on what step() returns
+        print(f"Reward: {reward}")#, Done: {done}, Info: {info}")
+        env_gym.render()
 
         if done:
-            obs = env.reset()
-
-    env.reset()
-
+            obs = env.reset()  # Reset environment if done
