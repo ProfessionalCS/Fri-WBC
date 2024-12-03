@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # Load the model
     env = VecNormalize.load("./data_and_models/training_models/vec_normalize.pkl", env)
     model_name = "point_model"
-    model_path = "./data_and_models/training_models/point_model.zip"
+    model_path = "./data_and_models/training_models/*" #!! Change this to the path of the model
     model = PPO.load(model_path, env=env)
     obs = env.reset()
     print("Initial observation:", obs)

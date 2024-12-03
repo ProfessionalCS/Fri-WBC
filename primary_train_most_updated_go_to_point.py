@@ -17,7 +17,7 @@ def create_filenames_for_each_model(name_model_actual="point_model"):   # from o
     return f"{name_model_actual}_{timestamp}.zip" 
 
 # saved in my home to easier find them ==> subject to change as needed
-checkpoint_directory = "/home/anastasiia/models"  # this one location other than tensorboard log to save checkpoints for models
+checkpoint_directory = "home/FRI_WBC"  # this one location other than tensorboard log to save checkpoints for models
 os.makedirs(checkpoint_directory, exist_ok=True)  # param just to ensure the directory exists
 
 latest_model_path = os.path.join(checkpoint_directory, "point_model_latest_checkpoint.zip")

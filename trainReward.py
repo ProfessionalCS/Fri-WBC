@@ -16,6 +16,7 @@ import os
 
 # Register Enviorment
 import gym
+import datetime
 from stable_baselines3.common.utils import set_random_seed
 from robosuite.environments.base import register_env
 from my_environments import GoToPointTask
@@ -97,10 +98,11 @@ if __name__ == "__main__":
     num_cpu = 8
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
-    model_name = "./data_and_models/training_models/point_model"
+    # check this pathway
+    model_name = "./data_and_models/checkpoints/rl_model_200000_steps"  #
     vec_path = "./data_and_models/training_models/vec_normalize.pkl"
     file_path = model_name + ".zip"
-    
+
     if os.path.exists(file_path) :
         # print("Loading model")
         env = VecNormalize.load(vec_path, env)
@@ -110,7 +112,7 @@ if __name__ == "__main__":
     else : 
         # Initialize PPO model with parameters included to facilitate more effcient training (parameters included as per request) (complete)
         print("Creating new model")
-        env = VecNormalize(env)
+        #env = VecNormalize(env)
         model = PPO(
             policy= "MlpPolicy",      # Policy that exists
             env= env,          # Normalized vectorized env

@@ -362,7 +362,7 @@ class GoToPointTask(SingleArmEnv):
             rotation=None,
             ensure_object_boundary_in_range=False,
             ensure_valid_placement=True,
-            reference_pos=[0.0, 0.5, 0.02],
+            reference_pos=[0.0, 10.5, 10.02],
             z_offset=0.01,
         )
 
@@ -478,8 +478,7 @@ class GoToPointTask(SingleArmEnv):
         self.generated_trajectory = self.generate_trajectory(
         start=start_position,
         target=target_position,
-        num_steps=50  # number of positions in the path
-)
+        num_steps=50)  # number of positions in the path)
 
     def generate_trajectory(self, start, target, num_steps):  # num_steps = 100 to ensure less fast I guess
         trajectory = [
@@ -489,7 +488,7 @@ class GoToPointTask(SingleArmEnv):
             # [0.2, -0.2, 1.3],  # fourth point   idk if its what needed 
     ]
 
-        return np.array(trajectory)
+        return np.array(trajectory[0])
 
     # or can do these too
     #     hardcoded_points = [
