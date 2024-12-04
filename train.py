@@ -97,6 +97,21 @@ def make_gym_env(env_id, rank, seed=0):
     return _init
 
 
+def find_latest_model(model_name):
+    """
+    Find the latest model file in the directory.
+
+    :param model_name: (str) the base name of the model file
+    :return: (str) the path to the latest model file
+    """
+    current = 20000
+    modelname = ""
+    while (os.path.exists(model_name+ "_" + str(current) + "_steps.zip")):
+        modelname = model_name + str(current) + ".zip"
+        current += 20000
+    
+    return modelname
+
 # create environment instance
 if __name__ == "__main__":
     
@@ -118,20 +133,23 @@ if __name__ == "__main__":
     num_cpu = 4
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
-    model_name = "./data_and_models/training_models/point_model"
-    file_path = model_name + ".zip"
+    model_name = "./data_and_models/training_models/point_model.zip"
+    # file_path = find_latest_model(model_name)
+    
     vec_path = "./data_and_models/training_models/vec_normalize.pkl"
     
     
-    if os.path.exists(file_path) :
+    
+    if os.path.exists(model_name):
         print("Loading model")
-        env = VecNormalize.load(vec_path, env)
+        env = VecNormalize(env)
         model = PPO.load(model_name)
         model.env = env
 
     else : 
         # Initialize PPO model with parameters included to facilitate more effcient training (parameters included as per request) (complete)
         print("Creating new model")
+        raise ValueError("Something went wrong")
         env = VecNormalize(env)
         model = PPO(
             policy= "MlpPolicy",      # Policy that exists
@@ -142,7 +160,7 @@ if __name__ == "__main__":
             verbose=1,                # Verbose idk what that is
             tensorboard_log='./data_and_models/log/tb.log'
         )
-    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path='./data_and_models/checkpoints/', name_prefix='point_model')
+    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path='./data_and_models/checkpoints/', name_prefix='rl_model')
 
 
     # making the model learn (train)  (complete)
