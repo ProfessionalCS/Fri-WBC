@@ -34,6 +34,13 @@ from my_model.arenas import EmptyArena
 
 
 class GoToPointTask(SingleArmEnv):
+    
+
+    def step(self, action): #! need to override this function to ensure the robot moves towards the target
+        # Clip the action 
+        clipped_action = np.clip(action, -0.1, 0.1)
+        return super().step(clipped_action)
+
     """
     This class corresponds to the lifting task for a single robot arm.
 
@@ -299,6 +306,7 @@ class GoToPointTask(SingleArmEnv):
         # Adjust base pose accordingly
         xpos = np.array([0, 0, 0])
         self.robots[0].robot_model.set_base_xpos(xpos)
+        #self.robots[0].gripper.set_base_xpos(xpos)
 
         # load model for table top workspace
         mujoco_arena = EmptyArena()

@@ -48,15 +48,17 @@ def make_robosuite_env(env_id, options, rank, seed=0):
     """
     
     def _init():     
-        if rank % 4 == 0:  # first one testing
-            target_coordinate_temp = np.array([0.1, 0.1, 0.1])
-        elif rank % 4 == 1:  # second one testing
-            target_coordinate_temp = np.array([0.2, 0.2, 0.2])
-        elif rank % 4 == 2:  # third one testing
-            target_coordinate_temp = np.array([0.3, 0.3, 0.3])
-        elif rank % 4 == 3:  # fourth one testing
-            target_coordinate_temp = np.array([0.4, 0.4, 0.4])
-            
+        # if rank % 4 == 0:  # first one testing
+        #     target_coordinate_temp = np.array([0.1, 0.1, 0.1])
+        # elif rank % 4 == 1:  # second one testing
+        #     target_coordinate_temp = np.array([0.2, 0.2, 0.2])
+        # elif rank % 4 == 2:  # third one testing
+        #     target_coordinate_temp = np.array([0.3, 0.3, 0.3])
+        # elif rank % 4 == 3:  # fourth one testing
+        #     target_coordinate_temp = np.array([0.4, 0.4, 0.4])
+        target_coordinate_temp = np.array([0.5, 0.5, 0.5])
+        #Cliped action space
+        
         
         temp_env = suite.make(
         env_name="GoToPointTask", # try with other tasks like "Stack" and "Door"
@@ -113,12 +115,13 @@ if __name__ == "__main__":
     
     
     seed = 3
-    num_cpu = 8
+    num_cpu = 4
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
     model_name = "./data_and_models/training_models/point_model"
-    vec_path = "./data_and_models/training_models/vec_normalize.pkl"
     file_path = model_name + ".zip"
+    vec_path = "./data_and_models/training_models/vec_normalize.pkl"
+    
     
     if os.path.exists(file_path) :
         print("Loading model")
@@ -139,7 +142,7 @@ if __name__ == "__main__":
             verbose=1,                # Verbose idk what that is
             tensorboard_log='./data_and_models/log/tb.log'
         )
-    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path='./data_and_models/checkpoints/', name_prefix='rl_model')
+    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path='./data_and_models/checkpoints/', name_prefix='point_model')
 
 
     # making the model learn (train)  (complete)
