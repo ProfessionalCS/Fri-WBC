@@ -56,7 +56,7 @@ def make_robosuite_env(env_id, options, rank, seed=0):
         #     target_coordinate_temp = np.array([0.3, 0.3, 0.3])
         # elif rank % 4 == 3:  # fourth one testing
         #     target_coordinate_temp = np.array([0.4, 0.4, 0.4])
-        target_coordinate_temp = np.array([0.5, 0.5, 0.5])
+        target_coordinate_temp = np.array([1, 0, 0])
         #Cliped action space
         
         
@@ -97,7 +97,7 @@ def make_gym_env(env_id, rank, seed=0):
     return _init
 
 
-def find_latest_model(model_name):
+def find_latest_model(model_name_prefix_path):
     """
     Find the latest model file in the directory.
 
@@ -105,9 +105,10 @@ def find_latest_model(model_name):
     :return: (str) the path to the latest model file
     """
     current = 20000
+    
     modelname = ""
-    while (os.path.exists(model_name+ "_" + str(current) + "_steps.zip")):
-        modelname = model_name + str(current) + ".zip"
+    while (os.path.exists(model_name_prefix_path+ "_" + str(current) + "_steps.zip")):
+        modelname = model_name_prefix_path + str(current) + ".zip"
         current += 20000
     
     return modelname
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     env_options["control_freq"] = 20
     env_options["render_camera"] = None
     env_options["use_object_obs"] = False
-    env_options["horizon"] = 1000
+    env_options["horizon"] = 4000
     
      # Define the target coordinate
     # target_coordinate = np.array([0.5, 0.5, 0.5])
@@ -130,7 +131,7 @@ if __name__ == "__main__":
     
     
     seed = 3
-    num_cpu = 4
+    num_cpu = 1
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
     model_name = "./data_and_models/training_models/point_model.zip"
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     else : 
         # Initialize PPO model with parameters included to facilitate more effcient training (parameters included as per request) (complete)
         print("Creating new model")
-        raise ValueError("Something went wrong")
+        # raise ValueError("Something went wrong")
         env = VecNormalize(env)
         model = PPO(
             policy= "MlpPolicy",      # Policy that exists
@@ -165,9 +166,11 @@ if __name__ == "__main__":
 
     # making the model learn (train)  (complete)
     model.learn(
-        total_timesteps= 100000,  # Number of timesteps for model training
+        total_timesteps= 1000000,  # Number of timesteps for model training
         log_interval= 1,        # Interval for training progress,
         callback=checkpoint_callback
     )
     model.save(model_name)
     env.save(vec_path)
+
+# print("Hola mundo :)")

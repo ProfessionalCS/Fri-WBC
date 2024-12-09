@@ -73,20 +73,21 @@ if __name__ == "__main__":
     env_options["control_freq"] = 20
     env_options["render_camera"] = None
     env_options["use_object_obs"] = False
-    env_options["horizon"] = 1000
+    env_options["horizon"] = 4000
     options = env_options
     
     # Grab random seed 
     seed = 42  # You can replace 42 with any integer value you prefer
-    seed = random.randint(0, 4)
-    if seed % 4 == 0:  # first one testing
-            target_coordinate_temp = np.array([0.5, 0.1, 0.1])
-    elif seed % 4 == 1:  # second one testing
-            target_coordinate_temp = np.array([0.2, 0.2, 0.2])
-    elif seed % 4 == 2:  # third one testing
-            target_coordinate_temp = np.array([0.3, 0.3, 0.3])
-    elif seed % 4 == 3:  # fourth one testing
-            target_coordinate_temp = np.array([0.4, 0.4, 0.4])
+    # seed = random.randint(0, 4)
+    # if seed % 4 == 0:  # first one testing
+    #         target_coordinate_temp = np.array([0.5, 0.1, 0.1])
+    # elif seed % 4 == 1:  # second one testing
+    #         target_coordinate_temp = np.array([0.2, 0.2, 0.2])
+    # elif seed % 4 == 2:  # third one testing
+    #         target_coordinate_temp = np.array([0.3, 0.3, 0.3])
+    # elif seed % 4 == 3:  # fourth one testing
+    #         target_coordinate_temp = np.array([0.4, 0.4, 0.4])
+    target_coordinate_temp = np.array([1, 0, 0])
     print(f"Seed: {seed} and Target Coordinate: {target_coordinate_temp}")
     
     env =  suite.make(

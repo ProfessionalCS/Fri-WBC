@@ -38,7 +38,7 @@ class GoToPointTask(SingleArmEnv):
 
     def step(self, action): #! need to override this function to ensure the robot moves towards the target
         # Clip the action 
-        clipped_action = np.clip(action, -0.1, 0.1)
+        clipped_action = np.clip(action, -0.5, 0.5)
         return super().step(clipped_action)
 
     """
@@ -182,7 +182,7 @@ class GoToPointTask(SingleArmEnv):
         render_visual_mesh=True,
         render_gpu_device_id=-1,
         control_freq=20,
-        horizon=1000,
+        horizon=4000,
         ignore_done=False,
         hard_reset=True,
         camera_names="agentview",
@@ -192,8 +192,10 @@ class GoToPointTask(SingleArmEnv):
         camera_segmentations=None,  # {None, instance, class, element}
         renderer="mujoco",
         renderer_config=None,
-        
-        target_coordinate= np.array([0.0, 0.0, 0])  # default target position
+        listofCord = [np.array([1, 0, 0]), np.array([.71, 0.71, 0]), np.array([-0.71, 0.71, 0]), np.array([-1, 0, 0])],
+        index = 0,
+        target_coordinate= np.array([1, 0, 0]),  # default target position
+        rewardindex = 0,
         
     ):
         # settings for table top
@@ -204,6 +206,8 @@ class GoToPointTask(SingleArmEnv):
         # reward configuration
         self.reward_scale = reward_scale
         self.reward_shaping = reward_shaping
+        self.current_step = 0
+        self.rewardindex = rewardindex
 
         # whether to use ground-truth object states
         self.use_object_obs = use_object_obs
@@ -212,6 +216,8 @@ class GoToPointTask(SingleArmEnv):
         self.placement_initializer = placement_initializer
         
         self.target_coordinate = target_coordinate
+        self.listofCord = listofCord
+        self.index = index
         
         
 
@@ -272,25 +278,45 @@ class GoToPointTask(SingleArmEnv):
     # task is to ensure the loss is lowered ==> will adjust reward accordingly
 
     def reward(self, action):
+        
         gripper_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
         distance = np.linalg.norm(gripper_pos - self.target_coordinate)
-        reward = 1 - np.tanh(5.0 * distance) # from 10.0 to 5.0 how close gripper to tgt
+        # self.current_step += 1
+        # self.target_coordinate =  self.target_coordinate + np.array([.01*self.current_step, .01*self.current_step, .01*self.current_step]) # remove when go to point is implemented
+        reward = 1 - np.tanh(distance) # from 10.0 to 5.0 how close gripper to tgt
 
         # I added new elemenents to the reward to ensure precision ==> need to know if it needs to be
         previous_distance = getattr(self, "previous_distance", float("inf")) #getattr used in case prev_distance attribute doesn't exist
         if distance < previous_distance:
-                reward += 0.1  # more points for getting closer to teh target
-        self.previous_distance = distance
+                reward *= 10  # more points for getting closer to teh target
+                self.previous_distance = distance
+        # less points for moving away from the target
+        self.rewardindex += 1
+        
+        
+        
 
-        if distance < 0.01:
-            reward += 10.0  # higher encouragment
+        if distance < 0.1 or self.rewardindex % 500:
+            print("This is running")
+            reward += 10000.0  # higher encouragment
+            self.next_cord()
+            print("Target reached: New cordinate", self.target_coordinate)
+            self.previous_distance = distance = np.linalg.norm(gripper_pos - self.target_coordinate)
+            
+            
+            
 
         # remember in case need exponent the reward
         # reward -= 0.01 * self.current_step  # <== small penalty that will increase as we progresss
         # self.current_step += 1
 
         return reward
-    
+    def next_cord(self):
+        print("This is running")
+        self.index += 1
+        self.target_coordinate =  self.listofCord[self.index % 4]
+        print("New target coordinate: ", self.target_coordinate)
+        
 
     def set_target_position(self, target_position):
         # using this to update the current target position
@@ -307,7 +333,7 @@ class GoToPointTask(SingleArmEnv):
         xpos = np.array([0, 0, 0])
         self.robots[0].robot_model.set_base_xpos(xpos)
         #self.robots[0].gripper.set_base_xpos(xpos)
-
+        
         # load model for table top workspace
         mujoco_arena = EmptyArena()
 
@@ -336,6 +362,7 @@ class GoToPointTask(SingleArmEnv):
             size_max=[0.022, 0.022, 0.022],  # [0.018, 0.018, 0.018])
             rgba=[1, 0, 0, 1],
             material=redwood,
+            
         )
 
         # Create placement initializer
@@ -389,23 +416,39 @@ class GoToPointTask(SingleArmEnv):
             modality = "object"
 
             # cube-related observables
-            @sensor(modality=modality)
-            def cube_pos(obs_cache):
-                return np.array(self.sim.data.body_xpos[self.cube_body_id])
+            # @sensor(modality=modality)
+            # def cube_pos(obs_cache):
+            #     return np.array(self.sim.data.body_xpos[self.cube_body_id])
 
-            @sensor(modality=modality)
-            def cube_quat(obs_cache):
-                return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
+            # @sensor(modality=modality)
+            # def cube_quat(obs_cache):
+            #     return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
 
+            # @sensor(modality=modality)
+            # def gripper_to_cube_pos(obs_cache):
+            #     return (
+            #         obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
+            #         if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
+            #         else np.zeros(3)
+            #     )
             @sensor(modality=modality)
-            def gripper_to_cube_pos(obs_cache):
+            def time(obs_cache):
+                return self.rewardindex
+            
+            @sensor(modality=modality)
+            def currentTarget(obs_cache):
+                return self.target_coordinate
+            
+            @sensor(modality=modality)
+            def distance(obs_cache):
                 return (
-                    obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
-                    if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
+                    obs_cache[f"{pf}eef_pos"] - obs_cache["currentTarget"]
+                    if f"{pf}eef_pos" in obs_cache and "currentTarget" in obs_cache
                     else np.zeros(3)
                 )
 
-            sensors = [cube_pos, cube_quat, gripper_to_cube_pos]
+
+            sensors = [time, currentTarget, distance]
             names = [s.__name__ for s in sensors]
 
             # Create observables
@@ -424,6 +467,8 @@ class GoToPointTask(SingleArmEnv):
         """
         super()._reset_internal()
         self.current_step = 0
+        self.index = 0
+        self.target_coordinate = self.listofCord[self.index % 4]
 
         # Reset all object positions using initializer sampler if we're not directly loading from an xml
         if not self.deterministic_reset:
@@ -435,9 +480,7 @@ class GoToPointTask(SingleArmEnv):
             for obj_pos, obj_quat, obj in object_placements.values():
                 self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
 
-        # here we ensure that target position is set each time when env resets internally #
-        target_position = np.array([0.5, 0.0, 1.0])  # can change value if needed, let me know if need random
-        self.set_target_position(target_position)
+
 
     def visualize(self, vis_settings):
         """
