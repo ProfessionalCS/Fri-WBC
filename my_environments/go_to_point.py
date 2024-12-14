@@ -192,9 +192,9 @@ class GoToPointTask(SingleArmEnv):
         camera_segmentations=None,  # {None, instance, class, element}
         renderer="mujoco",
         renderer_config=None,
-        listofCord = [np.array([1, 0, 0]), np.array([.71, 0.71, 0]), np.array([-0.71, 0.71, 0]), np.array([-1, 0, 0])],
+        listofCord = [np.array([1, .5, 1.5]), np.array([.71, 0.71, 1.5]), np.array([-0.71, 0.71, 1.5]), np.array([-1, .5, 1.5])],
         index = 0,
-        target_coordinate= np.array([1, 0, 0]),  # default target position
+        target_coordinate= np.array([1, .5, 1.5]),  # default target position
         rewardindex = 0,
         
     ):
@@ -283,25 +283,31 @@ class GoToPointTask(SingleArmEnv):
         distance = np.linalg.norm(gripper_pos - self.target_coordinate)
         # self.current_step += 1
         # self.target_coordinate =  self.target_coordinate + np.array([.01*self.current_step, .01*self.current_step, .01*self.current_step]) # remove when go to point is implemented
-        reward = 1 - np.tanh(distance) # from 10.0 to 5.0 how close gripper to tgt
+        reward = float(1 - np.tanh(distance)) / float(10) # from 10.0 to 5.0 how close gripper to tgt
 
         # I added new elemenents to the reward to ensure precision ==> need to know if it needs to be
         previous_distance = getattr(self, "previous_distance", float("inf")) #getattr used in case prev_distance attribute doesn't exist
         if distance < previous_distance:
-                reward *= 10  # more points for getting closer to teh target
-                self.previous_distance = distance
+                reward *= 1.1  # more points for getting closer to teh target
+        previous_distance = distance
         # less points for moving away from the target
         self.rewardindex += 1
         
         
         
 
-        if distance < 0.1 or self.rewardindex % 500:
-            print("This is running")
-            reward += 10000.0  # higher encouragment
+        if distance < 0.03 or (self.rewardindex  % (500 * ((self.index % 4) +1)) == 0):
+            # print("This is running")
+            if (distance < 0.03):
+                #print("Target reached: New cordinate")
+                print("Made it")
+                reward += 1000.0
+              # higher encouragment
+            # print("Target reached: New cordinate")
             self.next_cord()
-            print("Target reached: New cordinate", self.target_coordinate)
+            # print("Target reached: New cordinate", self.target_coordinate)
             self.previous_distance = distance = np.linalg.norm(gripper_pos - self.target_coordinate)
+            # print("New target coordinate: ", self.target_coordinate)
             
             
             
@@ -312,10 +318,10 @@ class GoToPointTask(SingleArmEnv):
 
         return reward
     def next_cord(self):
-        print("This is running")
+        # print("This is running")
         self.index += 1
         self.target_coordinate =  self.listofCord[self.index % 4]
-        print("New target coordinate: ", self.target_coordinate)
+        # print("New target coordinate: ", self.target_coordinate)
         
 
     def set_target_position(self, target_position):
@@ -358,8 +364,8 @@ class GoToPointTask(SingleArmEnv):
         )
         self.cube = BoxObject(
             name="cube",
-            size_min=[0.020, 0.020, 0.020],  # [0.015, 0.015, 0.015],
-            size_max=[0.022, 0.022, 0.022],  # [0.018, 0.018, 0.018])
+            size_min=[1.020, 1.020, 1.020],  # [0.015, 0.015, 0.015],
+            size_max=[1.022, 1.022, 1.022],  # [0.018, 0.018, 0.018])
             rgba=[1, 0, 0, 1],
             material=redwood,
             
@@ -442,9 +448,7 @@ class GoToPointTask(SingleArmEnv):
             @sensor(modality=modality)
             def distance(obs_cache):
                 return (
-                    obs_cache[f"{pf}eef_pos"] - obs_cache["currentTarget"]
-                    if f"{pf}eef_pos" in obs_cache and "currentTarget" in obs_cache
-                    else np.zeros(3)
+                     np.linalg.norm(self.sim.data.site_xpos[self.robots[0].eef_site_id] - self.target_coordinate)
                 )
 
 

@@ -56,7 +56,7 @@ def make_robosuite_env(env_id, options, rank, seed=0):
         #     target_coordinate_temp = np.array([0.3, 0.3, 0.3])
         # elif rank % 4 == 3:  # fourth one testing
         #     target_coordinate_temp = np.array([0.4, 0.4, 0.4])
-        target_coordinate_temp = np.array([1, 0, 0])
+        target_coordinate_temp = np.array([1, .5, 1.5])
         #Cliped action space
         
         
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     
     
     seed = 3
-    num_cpu = 1
+    num_cpu = 6
     env = SubprocVecEnv([make_robosuite_env("GoToPointTask",env_options, i, seed) for i in range(num_cpu)])# Hard coded cpu count
 
     model_name = "./data_and_models/training_models/point_model.zip"
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     # making the model learn (train)  (complete)
     model.learn(
-        total_timesteps= 1000000,  # Number of timesteps for model training
+        total_timesteps= 400000,  # Number of timesteps for model training
         log_interval= 1,        # Interval for training progress,
         callback=checkpoint_callback
     )
