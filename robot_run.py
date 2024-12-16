@@ -82,6 +82,7 @@ class SawyerEnv():
 
 # Integration with the Simulation Loop
 if __name__ == "__main__":
+    # this could be complete nonsense I have not tried it and had to abandon due to time constraints 
     # Real Robot Env
     real_env = SawyerEnv()
     real_env.save_pose()

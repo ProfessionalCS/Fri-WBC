@@ -207,6 +207,7 @@ def normalize(quaternion):
     return quat
 
 if __name__ == '__main__':
+    # Keep in mind this was never tested and could be complete wrong
     env = SawyerEnv()
 
 
