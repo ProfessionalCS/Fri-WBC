@@ -1,166 +1,21 @@
 from collections import OrderedDict
-
-print("benu GO TO IT")
-
 import numpy as np
-
 from robosuite.environments.manipulation.single_arm_env import SingleArmEnv
-#from robosuite.models.arenas import TableArena
 from robosuite.models.objects import BoxObject
 from robosuite.models.tasks import ManipulationTask
 from robosuite.utils.mjcf_utils import CustomMaterial
 from robosuite.utils.observables import Observable, sensor
 from robosuite.utils.placement_samplers import UniformRandomSampler
-from robosuite.utils.transform_utils import convert_quat
-
-from collections import OrderedDict
-
-
-
-
-
-from robosuite.models.tasks import ManipulationTask
-from robosuite.utils.mjcf_utils import CustomMaterial
-from robosuite.utils.observables import Observable, sensor
-from robosuite.utils.placement_samplers import UniformRandomSampler
-from robosuite.utils.transform_utils import convert_quat
-
-
-'''
-Adding stuff from my_model folder
-'''
 from my_model.tasks import GoToPointTask
 from my_model.arenas import EmptyArena
 
 
 class GoToPointTask(SingleArmEnv):
-    
-
     def step(self, action): #! need to override this function to ensure the robot moves towards the target
-        # Clip the action 
+        # Clip the action for safety
         clipped_action = np.clip(action, -0.5, 0.5)
         return super().step(clipped_action)
-
-    """
-    This class corresponds to the lifting task for a single robot arm.
-
-    Args:
-        robots (str or list of str): Specification for specific robot arm(s) to be instantiated within this env
-            (e.g: "Sawyer" would generate one arm; ["Panda", "Panda", "Sawyer"] would generate three robot arms)
-            Note: Must be a single single-arm robot!
-
-        env_configuration (str): Specifies how to position the robots within the environment (default is "default").
-            For most single arm environments, this argument has no impact on the robot setup.
-
-        controller_configs (str or list of dict): If set, contains relevant controller parameters for creating a
-            custom controller. Else, uses the default controller for this specific task. Should either be single
-            dict if same controller is to be used for all robots or else it should be a list of the same length as
-            "robots" param
-
-        gripper_types (str or list of str): type of gripper, used to instantiate
-            gripper models from gripper factory. Default is "default", which is the default grippers(s) associated
-            with the robot(s) the 'robots' specification. None removes the gripper, and any other (valid) model
-            overrides the default gripper. Should either be single str if same gripper type is to be used for all
-            robots or else it should be a list of the same length as "robots" param
-
-        initialization_noise (dict or list of dict): Dict containing the initialization noise parameters.
-            The expected keys and corresponding value types are specified below:
-
-            :`'magnitude'`: The scale factor of uni-variate random noise applied to each of a robot's given initial
-                joint positions. Setting this value to `None` or 0.0 results in no noise being applied.
-                If "gaussian" type of noise is applied then this magnitude scales the standard deviation applied,
-                If "uniform" type of noise is applied then this magnitude sets the bounds of the sampling range
-            :`'type'`: Type of noise to apply. Can either specify "gaussian" or "uniform"
-
-            Should either be single dict if same noise value is to be used for all robots or else it should be a
-            list of the same length as "robots" param
-
-            :Note: Specifying "default" will automatically use the default noise settings.
-                Specifying None will automatically create the required dict with "magnitude" set to 0.0.
-
-        table_full_size (3-tuple): x, y, and z dimensions of the table.
-
-        table_friction (3-tuple): the three mujoco friction parameters for
-            the table.
-
-        use_camera_obs (bool): if True, every observation includes rendered image(s)
-
-        use_object_obs (bool): if True, include object (cube) information in
-            the observation.
-
-        reward_scale (None or float): Scales the normalized reward function by the amount specified.
-            If None, environment reward remains unnormalized
-
-        reward_shaping (bool): if True, use dense rewards.
-
-        placement_initializer (ObjectPositionSampler): if provided, will
-            be used to place objects on every reset, else a UniformRandomSampler
-            is used by default.
-
-        has_renderer (bool): If true, render the simulation state in
-            a viewer instead of headless mode.
-
-        has_offscreen_renderer (bool): True if using off-screen rendering
-
-        render_camera (str): Name of camera to render if `has_renderer` is True. Setting this value to 'None'
-            will result in the default angle being applied, which is useful as it can be dragged / panned by
-            the user using the mouse
-
-        render_collision_mesh (bool): True if rendering collision meshes in camera. False otherwise.
-
-        render_visual_mesh (bool): True if rendering visual meshes in camera. False otherwise.
-
-        render_gpu_device_id (int): corresponds to the GPU device id to use for offscreen rendering.
-            Defaults to -1, in which case the device will be inferred from environment variables
-            (GPUS or CUDA_VISIBLE_DEVICES).
-
-        control_freq (float): how many control signals to receive in every second. This sets the amount of
-            simulation time that passes between every action input.
-
-        horizon (int): Every episode lasts for exactly @horizon timesteps.
-
-        ignore_done (bool): True if never terminating the environment (ignore @horizon).
-
-        hard_reset (bool): If True, re-loads model, sim, and render object upon a reset call, else,
-            only calls sim.reset and resets all robosuite-internal variables
-
-        camera_names (str or list of str): name of camera to be rendered. Should either be single str if
-            same name is to be used for all cameras' rendering or else it should be a list of cameras to render.
-
-            :Note: At least one camera must be specified if @use_camera_obs is True.
-
-            :Note: To render all robots' cameras of a certain type (e.g.: "robotview" or "eye_in_hand"), use the
-                convention "all-{name}" (e.g.: "all-robotview") to automatically render all camera images from each
-                robot's camera list).
-
-        camera_heights (int or list of int): height of camera frame. Should either be single int if
-            same height is to be used for all cameras' frames or else it should be a list of the same length as
-            "camera names" param.
-
-        camera_widths (int or list of int): width of camera frame. Should either be single int if
-            same width is to be used for all cameras' frames or else it should be a list of the same length as
-            "camera names" param.
-
-        camera_depths (bool or list of bool): True if rendering RGB-D, and RGB otherwise. Should either be single
-            bool if same depth setting is to be used for all cameras or else it should be a list of the same length as
-            "camera names" param.
-
-        camera_segmentations (None or str or list of str or list of list of str): Camera segmentation(s) to use
-            for each camera. Valid options are:
-
-                `None`: no segmentation sensor used
-                `'instance'`: segmentation at the class-instance level
-                `'class'`: segmentation at the class level
-                `'element'`: segmentation at the per-geom level
-
-            If not None, multiple types of segmentations can be specified. A [list of str / str or None] specifies
-            [multiple / a single] segmentation(s) to use for all cameras. A list of list of str specifies per-camera
-            segmentation setting(s) to use.
-
-    Raises:
-        AssertionError: [Invalid number of robots specified]
-    """
-
+    
     def __init__(
         self,
         robots,
@@ -168,8 +23,6 @@ class GoToPointTask(SingleArmEnv):
         controller_configs=None,
         gripper_types="default",
         initialization_noise="default",
-        # table_full_size=(0.8, 0.8, 0.05),
-        # table_friction=(1.0, 5e-3, 1e-4),
         use_camera_obs=True,
         use_object_obs=True,
         reward_scale=1.0,
@@ -192,17 +45,12 @@ class GoToPointTask(SingleArmEnv):
         camera_segmentations=None,  # {None, instance, class, element}
         renderer="mujoco",
         renderer_config=None,
-        listofCord = [np.array([1, .5, 1.5]), np.array([.71, 0.71, 1.5]), np.array([-0.71, 0.71, 1.5]), np.array([-1, .5, 1.5])],
+        listofCord = [np.array([0.5, 0.5, 0.5]), np.array([.71, 0.71, .71]), np.array( [0.3,  0.6,  1.3]), np.array([0.55, 0.55, 0.55])],
         index = 0,
-        target_coordinate= np.array([1, .5, 1.5]),  # default target position
+        target_coordinate= np.array([0.5, 0.5, 0.5]),  # default target position
         rewardindex = 0,
         
     ):
-        # settings for table top
-        # self.table_full_size = table_full_size
-        # self.table_friction = table_friction
-        # self.table_offset = np.array((0, 0, 0.8))
-
         # reward configuration
         self.reward_scale = reward_scale
         self.reward_shaping = reward_shaping
@@ -211,15 +59,13 @@ class GoToPointTask(SingleArmEnv):
 
         # whether to use ground-truth object states
         self.use_object_obs = use_object_obs
+        self.baseline_reward = 0.1
 
         # object placement initializer
         self.placement_initializer = placement_initializer
-        
         self.target_coordinate = target_coordinate
         self.listofCord = listofCord
         self.index = index
-        
-        
 
         super().__init__(
             robots=robots,
@@ -246,83 +92,42 @@ class GoToPointTask(SingleArmEnv):
             camera_segmentations=camera_segmentations,
             renderer=renderer,
             renderer_config=renderer_config,
-            
-            
         )
-
-    # # I commented out original reward function to avoid overriding and wrong results
-    # def reward(self, action=None):
-    #     """
-    #     Reward function for the task.
-    #     Sparse un-normalized reward:
-    #         - a discrete reward of 2.25 is provided if the cube is lifted
-    #     Un-normalized summed components if using reward shaping:
-    #         - Reaching: in [0, 1], to encourage the arm to reach the cube
-    #         - Grasping: in {0, 0.25}, non-zero if arm is grasping the cube
-    #         - Lifting: in {0, 1}, non-zero if arm has lifted the cube
-    #     The sparse reward only consists of the lifting component.
-    #     Note that the final reward is normalized and scaled by
-    #     reward_scale / 2.25 as well so that the max score is equal to reward_scale
-    #     Args:
-    #         action (np array): [NOT USED]
-    #     Returns:
-    #         float: reward value
-    #     """
-    #     reward = 0.0
-    #     # sparse completion reward
-    #     if self._check_success():
-    #         reward = 2.25
-            
-        
-    # added reward based on how close the gripper is to the target
-    # task is to ensure the loss is lowered ==> will adjust reward accordingly
-
     def reward(self, action):
         
         gripper_pos = self.sim.data.site_xpos[self.robots[0].eef_site_id]
         distance = np.linalg.norm(gripper_pos - self.target_coordinate)
         # self.current_step += 1
-        # self.target_coordinate =  self.target_coordinate + np.array([.01*self.current_step, .01*self.current_step, .01*self.current_step]) # remove when go to point is implemented
-        reward = float(1 - np.tanh(distance)) / float(10) # from 10.0 to 5.0 how close gripper to tgt
-
+        reward = float(1 - np.tanh(distance))
         # I added new elemenents to the reward to ensure precision ==> need to know if it needs to be
         previous_distance = getattr(self, "previous_distance", float("inf")) #getattr used in case prev_distance attribute doesn't exist
         if distance < previous_distance:
-                reward *= 1.1  # more points for getting closer to teh target
+                reward *= 1.1   # more points for getting closer to teh target
         previous_distance = distance
         # less points for moving away from the target
         self.rewardindex += 1
+        reward = (reward  + self.baseline_reward ) -reward * (self.rewardindex/ (200 + self.rewardindex))  # the longer it takes to reach the target, the less the reward 
         
-        
-        
-
-        if distance < 0.03 or (self.rewardindex  % (500 * ((self.index % 4) +1)) == 0):
-            # print("This is running")
-            if (distance < 0.03):
-                #print("Target reached: New cordinate")
-                print("Made it")
-                reward += 1000.0
-              # higher encouragment
-            # print("Target reached: New cordinate")
+        if (self.rewardindex % 500 == 0):
+            print(f"current distance:{distance:.5f} the current cord {gripper_pos}, stuck at cord {self.target_coordinate}")
+        if distance < 0.2:
             self.next_cord()
-            # print("Target reached: New cordinate", self.target_coordinate)
-            self.previous_distance = distance = np.linalg.norm(gripper_pos - self.target_coordinate)
-            # print("New target coordinate: ", self.target_coordinate)
+            if (self.index == 3):
+                self.done = True
+                print("All targets reached")
+                return reward * 10
+            # print("Target reached: New cordinate", self.target_coordinate
+            self.baseline_reward += reward
             
-            
-            
-
-        # remember in case need exponent the reward
-        # reward -= 0.01 * self.current_step  # <== small penalty that will increase as we progresss
-        # self.current_step += 1
-
+            print("New target coordinate: ", self.target_coordinate)
+            reward *= 10 # more points for reaching the target
         return reward
+    
     def next_cord(self):
-        # print("This is running")
+        self.rewardindex = 0
         self.index += 1
         self.target_coordinate =  self.listofCord[self.index % 4]
-        # print("New target coordinate: ", self.target_coordinate)
-        
+        self.previous_distance = distance = np.linalg.norm(self.sim.data.site_xpos[self.robots[0].eef_site_id] - self.target_coordinate)
 
     def set_target_position(self, target_position):
         # using this to update the current target position
@@ -346,53 +151,11 @@ class GoToPointTask(SingleArmEnv):
         # Arena always gets set to zero origin
         mujoco_arena.set_origin([0, 0, 0])
 
-        # initialize objects of interest
-        tex_attrib = {
-            "type": "cube",
-        }
-        mat_attrib = {
-            "texrepeat": "1 1",
-            "specular": "0.4",
-            "shininess": "0.1",
-        }
-        redwood = CustomMaterial(
-            texture="WoodRed",
-            tex_name="redwood",
-            mat_name="redwood_mat",
-            tex_attrib=tex_attrib,
-            mat_attrib=mat_attrib,
-        )
-        self.cube = BoxObject(
-            name="cube",
-            size_min=[1.020, 1.020, 1.020],  # [0.015, 0.015, 0.015],
-            size_max=[1.022, 1.022, 1.022],  # [0.018, 0.018, 0.018])
-            rgba=[1, 0, 0, 1],
-            material=redwood,
-            
-        )
-
-        # Create placement initializer
-        if self.placement_initializer is not None:
-            self.placement_initializer.reset()
-            self.placement_initializer.add_objects(self.cube)
-        else:
-            self.placement_initializer = UniformRandomSampler(
-                name="ObjectSampler",
-                mujoco_objects=self.cube,
-                x_range=[0, 0],
-                y_range=[0, 0],
-                rotation=None,
-                ensure_object_boundary_in_range=False,
-                ensure_valid_placement=True,
-                reference_pos= self.target_coordinate, 
-                z_offset=0.01,
-            )
-
         # task includes arena, robot, and objects of interest
         self.model = ManipulationTask(
             mujoco_arena=mujoco_arena,
             mujoco_robots=[robot.robot_model for robot in self.robots],
-            mujoco_objects=self.cube,
+            
         )
 
     def _setup_references(self):
@@ -404,7 +167,7 @@ class GoToPointTask(SingleArmEnv):
         super()._setup_references()
 
         # Additional object references from this env
-        self.cube_body_id = self.sim.model.body_name2id(self.cube.root_body)
+        #self.cube_body_id = self.sim.model.body_name2id(self.cube.root_body)
 
     def _setup_observables(self):
         """
@@ -420,27 +183,13 @@ class GoToPointTask(SingleArmEnv):
             # Get robot prefix and define observables modality
             pf = self.robots[0].robot_model.naming_prefix
             modality = "object"
-
-            # cube-related observables
-            # @sensor(modality=modality)
-            # def cube_pos(obs_cache):
-            #     return np.array(self.sim.data.body_xpos[self.cube_body_id])
-
-            # @sensor(modality=modality)
-            # def cube_quat(obs_cache):
-            #     return convert_quat(np.array(self.sim.data.body_xquat[self.cube_body_id]), to="xyzw")
-
-            # @sensor(modality=modality)
-            # def gripper_to_cube_pos(obs_cache):
-            #     return (
-            #         obs_cache[f"{pf}eef_pos"] - obs_cache["cube_pos"]
-            #         if f"{pf}eef_pos" in obs_cache and "cube_pos" in obs_cache
-            #         else np.zeros(3)
-            #     )
             @sensor(modality=modality)
             def time(obs_cache):
-                return self.rewardindex
+                return self.index
             
+            @sensor(modality=modality)
+            def currentPOS(obs_cache):
+                return self.sim.data.site_xpos[self.robots[0].eef_site_id]
             @sensor(modality=modality)
             def currentTarget(obs_cache):
                 return self.target_coordinate
@@ -452,7 +201,7 @@ class GoToPointTask(SingleArmEnv):
                 )
 
 
-            sensors = [time, currentTarget, distance]
+            sensors = [currentPOS, time, currentTarget, distance]
             names = [s.__name__ for s in sensors]
 
             # Create observables
@@ -472,18 +221,9 @@ class GoToPointTask(SingleArmEnv):
         super()._reset_internal()
         self.current_step = 0
         self.index = 0
+        self.rewardindex = 0
         self.target_coordinate = self.listofCord[self.index % 4]
-
-        # Reset all object positions using initializer sampler if we're not directly loading from an xml
-        if not self.deterministic_reset:
-
-            # Sample from the placement initializer for all objects
-            object_placements = self.placement_initializer.sample()
-
-            # Loop through all objects and reset their positions
-            for obj_pos, obj_quat, obj in object_placements.values():
-                self.sim.data.set_joint_qpos(obj.joints[0], np.concatenate([np.array(obj_pos), np.array(obj_quat)]))
-
+        self.baseline_reward = 0.1
 
 
     def visualize(self, vis_settings):
@@ -502,19 +242,3 @@ class GoToPointTask(SingleArmEnv):
         if vis_settings["grippers"]:
             self._visualize_gripper_to_target(gripper=self.robots[0].gripper, target=self.cube)
 
-    def _check_success(self):
-        """
-        Check if cube has been lifted.
-
-        Returns:
-            bool: True if cube has been lifted
-        """
-        return False
-        cube_height = self.sim.data.body_xpos[self.cube_body_id][2]
-        table_height = self.model.mujoco_arena.table_offset[2]
-
-        # cube is higher than the table top above a margin
-        # print("check_success called")
-        if( cube_height > table_height + 0.04):
-            print("Cube lifted")
-        return cube_height > table_height + 0.04

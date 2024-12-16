@@ -29,4 +29,5 @@ env.reset()
 for i in range(1000):
     action = np.random.randn(env.robots[0].dof) # sample random action
     obs, reward, done, info = env.step(action)  # take action in the environment
+    print(env.sim.data.site_xpos[env.robots[0].eef_site_id])
     env.render()  # render on display

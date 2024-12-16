@@ -87,7 +87,7 @@ if __name__ == "__main__":
     #         target_coordinate_temp = np.array([0.3, 0.3, 0.3])
     # elif seed % 4 == 3:  # fourth one testing
     #         target_coordinate_temp = np.array([0.4, 0.4, 0.4])
-    target_coordinate_temp = np.array([1, .5, 1.5])
+    target_coordinate_temp = np.array([0.5, 0.5, 0.5])
     print(f"Seed: {seed} and Target Coordinate: {target_coordinate_temp}")
     
     env =  suite.make(
@@ -103,10 +103,10 @@ if __name__ == "__main__":
     env = DummyVecEnv([lambda : env_gym])
     # Load the model 
     # env = VecNormalize.load("./data_and_models/training_models/vec_normalize.pkl", env)
-    env = VecNormalize.load("./Seconddata_and_models/training_models/vec_normalize.pkl", env)
+    env = VecNormalize.load("./data_and_models/training_models/vec_normalize.pkl", env)
     model_name = "point_model"
     # model_path = "./data_and_models/training_models/point_model.zip"
-    model_path = "./Seconddata_and_models/training_models/point_model.zip"
+    model_path = "./data_and_models/training_models/point_model.zip"
     model = PPO.load(model_path, env=env)
     obs = env.reset()
     print("Initial observation:", obs)

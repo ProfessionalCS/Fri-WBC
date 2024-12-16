@@ -3,6 +3,7 @@ import numpy as np
 import robosuite as suite
 import yaml 
 from stable_baselines3 import PPO     # PPO Model Being trained using  cpu device
+from stable_baselines3 import SAC
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, SubprocVecEnv
 import robosuite as suite
 from robosuite.wrappers import GymWrapper
@@ -56,7 +57,7 @@ def make_robosuite_env(env_id, options, rank, seed=0):
         #     target_coordinate_temp = np.array([0.3, 0.3, 0.3])
         # elif rank % 4 == 3:  # fourth one testing
         #     target_coordinate_temp = np.array([0.4, 0.4, 0.4])
-        target_coordinate_temp = np.array([1, .5, 1.5])
+        target_coordinate_temp = np.array([0.5, 0.5, 0.5])
         #Cliped action space
         
         
@@ -148,15 +149,17 @@ if __name__ == "__main__":
         model.env = env
 
     else : 
+        # assert False, "Model not found"
         # Initialize PPO model with parameters included to facilitate more effcient training (parameters included as per request) (complete)
         print("Creating new model")
         # raise ValueError("Something went wrong")
         env = VecNormalize(env)
-        model = PPO(
+        model = SAC(
             policy= "MlpPolicy",      # Policy that exists
             env= env,          # Normalized vectorized env
             learning_rate= 0.0003,    # Learning rate for the model (should it be changed?)
-            n_steps= 3000,            # Number of steps for each update
+            buffer_size=5000,       # Buffer size for the model
+            learning_starts=1000,        
             batch_size= 500,           # Batch size for optimization
             verbose=1,                # Verbose idk what that is
             tensorboard_log='./data_and_models/log/tb.log'
@@ -166,7 +169,7 @@ if __name__ == "__main__":
 
     # making the model learn (train)  (complete)
     model.learn(
-        total_timesteps= 400000,  # Number of timesteps for model training
+        total_timesteps= 4000000,  # Number of timesteps for model training
         log_interval= 1,        # Interval for training progress,
         callback=checkpoint_callback
     )
